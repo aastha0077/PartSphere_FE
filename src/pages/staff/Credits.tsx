@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { CreditCard, AlertCircle, CheckCircle, Send, DollarSign } from 'lucide-react';
 import api from '../../services/api';
+import { toast } from 'sonner';
 
 const Credits = () => {
   const [credits, setCredits] = useState<any[]>([]);
@@ -24,7 +25,7 @@ const Credits = () => {
       await api.put(`/admin/credits/${id}/paid`);
       fetchCredits();
     } catch (err) {
-      alert('Payment failed');
+      toast.error('Payment failed');
     }
   };
 
@@ -48,7 +49,7 @@ const Credits = () => {
                   <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Invoice #{credit.salesInvoiceId}</p>
                 </div>
               </div>
-              <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--danger)' }}>${credit.dueAmount.toFixed(2)}</span>
+              <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--danger)' }}>Rs. {credit.dueAmount.toLocaleString()}</span>
             </div>
 
             <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', marginBottom: '1.5rem' }}>

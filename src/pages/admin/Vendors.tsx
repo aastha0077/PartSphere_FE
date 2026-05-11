@@ -9,15 +9,20 @@ import {
   Edit2, 
   Trash2, 
   Search,
-  ExternalLink,
-  MoreVertical,
-  User
+  User,
+  RefreshCw
 } from 'lucide-react';
-import api from '../../services/api';
-import { Vendor } from '../../types';
+import { vendorService } from '../../services/vendorService';
+import type { Vendor } from '../../services/vendorService';
+import { useAuth } from '../../context/AuthContext';
+import { toast } from 'sonner';
 import Modal from '../../components/common/Modal';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 
 const Vendors = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'Admin';
+
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,39 +31,50 @@ const Vendors = () => {
   const [formData, setFormData] = useState({
     name: '',
     contactPerson: '',
+    contact: '',
     email: '',
     phone: '',
     address: '',
     category: 'General'
   });
 
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean, id: number | null }>({
+    isOpen: false,
+    id: null
+  });
+
   const fetchVendors = async () => {
     try {
-      const res = await api.get('/admin/vendors');
-      setVendors(res.data);
-    } catch (err) {
-      console.error('Failed to fetch vendors');
+      const data = await vendorService.getAll();
+      setVendors(data);
+    } catch (err: any) {
+      toast.error('Failed to load vendors');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchVendors(); }, []);
+  useEffect(() => { 
+    fetchVendors(); 
+  }, []);
 
   const handleOpenModal = (vendor: Vendor | null = null) => {
+    if (!isAdmin) return;
+    
     if (vendor) {
       setEditingVendor(vendor);
       setFormData({ 
         name: vendor.name,
         contactPerson: vendor.contactPerson,
+        contact: vendor.contact,
         email: vendor.email,
         phone: vendor.phone,
         address: vendor.address,
-        category: (vendor as any).category || 'General'
+        category: vendor.category || 'General'
       });
     } else {
       setEditingVendor(null);
-      setFormData({ name: '', contactPerson: '', email: '', phone: '', address: '', category: 'General' });
+      setFormData({ name: '', contactPerson: '', contact: '', email: '', phone: '', address: '', category: 'General' });
     }
     setIsModalOpen(true);
   };
@@ -66,158 +82,148 @@ const Vendors = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      if (editingVendor) await api.put(`/admin/vendors/${editingVendor.id}`, formData);
-      else await api.post('/admin/vendors', formData);
+      if (editingVendor) {
+        await vendorService.update(editingVendor.id, formData);
+        toast.success('Vendor details updated successfully');
+      } else {
+        await vendorService.create(formData);
+        toast.success('New vendor registered');
+      }
       setIsModalOpen(false);
       fetchVendors();
-    } catch (err) {
-      console.error('Error saving vendor');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Error saving vendor');
+    }
+  };
+
+  const handleDelete = (id: number) => {
+    if (!isAdmin) return;
+    setDeleteConfirm({ isOpen: true, id });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm.id) return;
+    try {
+      await vendorService.delete(deleteConfirm.id);
+      toast.success('Vendor removed successfully');
+      fetchVendors();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to delete vendor. They may have active parts or purchases.');
     }
   };
 
   const filteredVendors = vendors.filter(v => 
     v.name.toLowerCase().includes(search.toLowerCase()) || 
-    v.contactPerson.toLowerCase().includes(search.toLowerCase())
+    v.contactPerson.toLowerCase().includes(search.toLowerCase()) ||
+    v.contact.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div className="animate-fade-in">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2.5rem' }}>
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '0.5rem', letterSpacing: '-0.02em' }}>
-            Supply <span className="text-gradient">Partners</span>
+          <h1 className="text-3xl font-extrabold text-white flex items-center gap-3">
+            <Truck className="text-indigo-500" />
+            Vendor <span className="text-indigo-500">Management</span>
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>
-            Manage your procurement sources and vendor relationships.
-          </p>
+          <p className="text-gray-400 mt-1">Manage your procurement sources and supplier relationships.</p>
         </div>
-        <button 
-          onClick={() => handleOpenModal()} 
-          style={{ 
-            padding: '12px 24px', 
-            background: 'var(--accent-gradient)', 
-            color: 'white', 
-            borderRadius: 'var(--radius-md)', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px', 
-            fontWeight: '600',
-            boxShadow: '0 10px 20px -10px rgba(99, 102, 241, 0.5)'
-          }}
-        >
-          <Plus size={20} /> Register Vendor
-        </button>
+        
+        {isAdmin && (
+          <button 
+            onClick={() => handleOpenModal()}
+            className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-600/20"
+          >
+            <Plus size={20} />
+            Register Vendor
+          </button>
+        )}
       </div>
 
-      <div className="glass-card" style={{ marginBottom: '2rem', padding: '1rem' }}>
-        <div style={{ position: 'relative' }}>
-          <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+      <div className="bg-[#0d0d12] border border-white/5 rounded-2xl p-4">
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
           <input 
             type="text" 
-            placeholder="Search by company or contact person..."
+            placeholder="Search by company, contact person or role..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '12px 12px 12px 40px',
-              background: 'rgba(255,255,255,0.03)',
-              border: '1px solid var(--glass-border)',
-              borderRadius: 'var(--radius-md)',
-              color: 'white'
-            }}
+            className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-indigo-500 outline-none transition-all"
           />
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '1.5rem' }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <AnimatePresence>
           {loading ? (
-            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem' }}>Loading partners...</div>
+            <div className="col-span-full py-12 flex flex-col items-center justify-center text-gray-500">
+              <RefreshCw className="animate-spin mb-4" size={32} />
+              Loading partners...
+            </div>
+          ) : filteredVendors.length === 0 ? (
+            <div className="col-span-full py-12 text-center text-gray-500 italic">
+              No vendors found matching your criteria.
+            </div>
           ) : filteredVendors.map((vendor, idx) => (
             <motion.div 
               key={vendor.id} 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
-              whileHover={{ y: -8, scale: 1.01 }} 
-              className="glass-card" 
-              style={{ position: 'relative', display: 'flex', flexDirection: 'column' }}
+              whileHover={{ y: -4 }} 
+              className="bg-[#0d0d12] border border-white/5 rounded-2xl p-6 flex flex-col hover:border-indigo-500/30 transition-all group relative"
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                <div style={{ 
-                  width: '64px', 
-                  height: '64px', 
-                  background: 'rgba(99, 102, 241, 0.1)', 
-                  borderRadius: '18px', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  color: 'var(--accent-primary)' 
-                }}>
-                  <Truck size={32} />
+              {isAdmin && (
+                <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => handleOpenModal(vendor)} className="p-2 text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors"><Edit2 size={16} /></button>
+                  <button onClick={() => handleDelete(vendor.id)} className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 size={16} /></button>
                 </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={() => handleOpenModal(vendor)} style={{ padding: '8px', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}><Edit2 size={16} /></button>
-                  <button onClick={async () => {
-                    if (window.confirm('Delete vendor?')) {
-                      try {
-                        await api.delete(`/admin/vendors/${vendor.id}`);
-                        fetchVendors();
-                      } catch (e) { console.error('Failed to delete'); }
-                    }
-                  }} style={{ padding: '8px', color: '#ef4444', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '8px' }}><Trash2 size={16} /></button>
+              )}
+
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-400 shrink-0">
+                  <Truck size={28} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-1 leading-tight pr-12">{vendor.name}</h3>
+                  <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full text-xs font-bold uppercase">
+                    {vendor.category || 'General'}
+                  </span>
                 </div>
               </div>
-              
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h3 style={{ fontSize: '1.35rem', fontWeight: '700', marginBottom: '0.25rem' }}>{vendor.name}</h3>
-                <span style={{ 
-                  fontSize: '0.75rem', 
-                  padding: '4px 10px', 
-                  background: 'rgba(99, 102, 241, 0.1)', 
-                  color: 'var(--accent-primary)', 
-                  borderRadius: '20px',
-                  fontWeight: '600'
-                }}>
-                  {(vendor as any).category || 'General Partner'}
-                </span>
-              </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <User size={14} color="var(--text-muted)" />
-                  </div>
+              <div className="space-y-3 flex-1 mb-6">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 text-gray-500"><User size={16} /></div>
                   <div>
-                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Contact Person</p>
-                    <p style={{ fontSize: '0.95rem' }}>{vendor.contactPerson}</p>
+                    <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Contact Person</p>
+                    <p className="text-sm text-gray-300 font-medium">{vendor.contactPerson}</p>
+                    <p className="text-xs text-gray-500">{vendor.contact}</p>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Mail size={14} color="var(--text-muted)" />
-                  </div>
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 text-gray-500"><Mail size={16} /></div>
                   <div>
-                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Email Address</p>
-                    <p style={{ fontSize: '0.95rem' }}>{vendor.email}</p>
+                    <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Email</p>
+                    <p className="text-sm text-gray-300 font-medium">{vendor.email}</p>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Phone size={14} color="var(--text-muted)" />
-                  </div>
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 text-gray-500"><Phone size={16} /></div>
                   <div>
-                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Phone Number</p>
-                    <p style={{ fontSize: '0.95rem' }}>{vendor.phone}</p>
+                    <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Phone</p>
+                    <p className="text-sm text-gray-300 font-medium">{vendor.phone}</p>
                   </div>
                 </div>
               </div>
 
-              <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                <MapPin size={16} color="var(--text-muted)" style={{ marginTop: '3px' }} />
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>{vendor.address}</p>
+              <div className="mt-auto pt-4 border-t border-white/5">
+                <div className="flex items-start gap-2">
+                  <MapPin size={16} className="text-gray-500 mt-0.5 shrink-0" />
+                  <p className="text-sm text-gray-400 leading-relaxed">{vendor.address}</p>
+                </div>
               </div>
             </motion.div>
           ))}
@@ -225,37 +231,53 @@ const Vendors = () => {
       </div>
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingVendor ? 'Edit Vendor Details' : 'Register New Vendor'}>
-        <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-          <div style={{ gridColumn: 'span 2' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Company Name</label>
-            <input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} style={{ width: '100%', padding: '12px', background: 'var(--bg-tertiary)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }} required />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Company Name</label>
+              <input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-indigo-500" required />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Contact Person</label>
+              <input value={formData.contactPerson} onChange={e => setFormData({...formData, contactPerson: e.target.value})} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-indigo-500" required />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Role / Title</label>
+              <input value={formData.contact} onChange={e => setFormData({...formData, contact: e.target.value})} placeholder="e.g. Sales Manager" className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-indigo-500" required />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email</label>
+              <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-indigo-500" required />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Phone</label>
+              <input value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-indigo-500" required />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Category</label>
+              <input value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} placeholder="e.g. Engine Parts" className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-indigo-500" required />
+            </div>
+            <div className="col-span-2">
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Office Address</label>
+              <textarea value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-indigo-500 min-h-[80px]" required />
+            </div>
           </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Contact Person</label>
-            <input value={formData.contactPerson} onChange={e => setFormData({...formData, contactPerson: e.target.value})} style={{ width: '100%', padding: '12px', background: 'var(--bg-tertiary)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }} required />
-          </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Category</label>
-            <input value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} style={{ width: '100%', padding: '12px', background: 'var(--bg-tertiary)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }} required />
-          </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Email</label>
-            <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} style={{ width: '100%', padding: '12px', background: 'var(--bg-tertiary)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }} required />
-          </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Phone</label>
-            <input value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} style={{ width: '100%', padding: '12px', background: 'var(--bg-tertiary)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }} required />
-          </div>
-          <div style={{ gridColumn: 'span 2' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Office Address</label>
-            <textarea value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} style={{ width: '100%', padding: '12px', background: 'var(--bg-tertiary)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white', minHeight: '80px' }} required />
-          </div>
-          <div style={{ gridColumn: 'span 2', display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-            <button type="button" onClick={() => setIsModalOpen(false)} style={{ flex: 1, padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', color: 'white' }}>Cancel</button>
-            <button type="submit" style={{ flex: 1, padding: '12px', background: 'var(--accent-gradient)', borderRadius: '8px', color: 'white', fontWeight: '700' }}>Save Vendor</button>
+          <div className="flex gap-3 pt-4">
+            <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl transition-all">Cancel</button>
+            <button type="submit" className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all">Save Vendor</button>
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog 
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: null })}
+        onConfirm={confirmDelete}
+        title="Delete Partner"
+        message="Are you sure you want to remove this vendor? This will fail if there are active inventory items linked to this partner."
+        confirmText="Remove Vendor"
+        type="danger"
+      />
     </div>
   );
 };

@@ -1,80 +1,226 @@
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Bar, Line } from 'react-chartjs-2';
-import { 
-  Chart as ChartJS, 
-  CategoryScale, 
-  LinearScale, 
-  PointElement, 
-  LineElement, 
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
   BarElement,
-  Title, 
-  Tooltip, 
+  Title,
+  Tooltip,
   Legend,
   Filler
 } from 'chart.js';
-import { 
-  Download, 
-  Calendar, 
-  DollarSign, 
-  TrendingUp, 
+import {
+  Download,
+  Calendar,
+  DollarSign,
+  TrendingUp,
   Users,
   PieChart,
   ArrowUpRight,
   ArrowDownRight,
-  Filter
+  Filter,
+  Package,
+  Activity,
+  History,
+  User
 } from 'lucide-react';
 import api from '../../services/api';
+import { toast } from 'sonner';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 ChartJS.register(
   CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler
 );
 
-const StatMiniCard = ({ label, value, trend, isPositive }: any) => (
-  <div className="glass-card" style={{ flex: 1, minWidth: '200px' }}>
-    <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>
-    <h2 style={{ fontSize: '1.75rem', margin: '0.5rem 0', fontWeight: '800' }}>{value}</h2>
-    <p style={{ 
-      color: isPositive ? '#10b981' : '#ef4444', 
-      fontSize: '0.8rem', 
-      display: 'flex', 
-      alignItems: 'center', 
+const StatMiniCard = ({ label, value, trend, isPositive, icon }: any) => (
+  <div className="glass-card" style={{ flex: 1, minWidth: '220px', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ position: 'absolute', right: '-10px', top: '-10px', opacity: 0.05, color: 'white' }}>
+      {React.cloneElement(icon, { size: 80 })}
+    </div>
+    <p style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: '700' }}>{label}</p>
+    <h2 style={{ fontSize: '1.75rem', margin: '0.5rem 0', fontWeight: '800', letterSpacing: '-0.02em' }}>{value}</h2>
+    <div style={{
+      color: isPositive ? '#10b981' : '#ef4444',
+      fontSize: '0.75rem',
+      display: 'flex',
+      alignItems: 'center',
       gap: '4px',
-      fontWeight: '600'
+      fontWeight: '700',
+      background: isPositive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+      padding: '4px 8px',
+      borderRadius: '20px',
+      width: 'fit-content'
     }}>
       {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-      {trend} vs last period
-    </p>
+      {trend}
+    </div>
   </div>
 );
 
 const Reports = () => {
   const [data, setData] = useState<any>(null);
+  const [periodicData, setPeriodicData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [periodLoading, setPeriodLoading] = useState(false);
+  const [revenueTrend, setRevenueTrend] = useState<any[]>([]);
+  const [selectedPeriod, setSelectedPeriod] = useState<'daily' | 'monthly' | 'yearly'>('monthly');
+
+  const fetchBaseData = async () => {
+    try {
+      const [topCust, freqBuy, pending, dashRes, trendRes] = await Promise.all([
+        api.get('/admin/reports/top-customers'),
+        api.get('/admin/reports/frequent-buyers'),
+        api.get('/admin/reports/pending-payments'),
+        api.get('/admin/reports/financial-summary'),
+        api.get('/admin/reports/revenue-trend')
+      ]);
+      setData({
+        topSpenders: topCust.data,
+        frequentCustomers: freqBuy.data,
+        pendingCredits: pending.data,
+        ...dashRes.data
+      });
+      setRevenueTrend(trendRes.data);
+    } catch (err) {
+      toast.error('Failed to load strategic data');
+    }
+  };
+
+  const fetchPeriodicReport = async (period: string) => {
+    setPeriodLoading(true);
+    try {
+      const res = await api.get(`/admin/reports/${period}`);
+      setPeriodicData(res.data);
+    } catch (err) {
+      toast.error(`Failed to load ${period} report`);
+    } finally {
+      setPeriodLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchReports = async () => {
-      try {
-        const [custRes, dashRes] = await Promise.all([
-          api.get('/admin/reports/customers'),
-          api.get('/admin/reports/dashboard')
-        ]);
-        setData({ ...custRes.data, ...dashRes.data });
-      } catch (err) {
-        console.error('Failed to fetch reports');
-      } finally {
-        setLoading(false);
-      }
+    const init = async () => {
+      setLoading(true);
+      await Promise.all([fetchBaseData(), fetchPeriodicReport('monthly')]);
+      setLoading(false);
     };
-    fetchReports();
+    init();
   }, []);
 
+  const handlePeriodChange = (period: 'daily' | 'monthly' | 'yearly') => {
+    setSelectedPeriod(period);
+    fetchPeriodicReport(period);
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      toast.loading("Generating PDF report...");
+      const res = await api.get(`/admin/reports/sales-trends?range=${selectedPeriod}`);
+      const sales = res.data;
+
+      const doc = new jsPDF();
+
+      // Add Title
+      doc.setFontSize(20);
+      doc.setTextColor(99, 102, 241); // Indigo color
+      doc.text("PartSphere Financial Report", 14, 22);
+
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
+      doc.text(`Reporting Period: ${selectedPeriod.toUpperCase()}`, 14, 35);
+
+      // Summary Metrics
+      doc.setFontSize(14);
+      doc.setTextColor(0);
+      doc.text("Performance Summary", 14, 45);
+
+      autoTable(doc, {
+        startY: 50,
+        head: [['Metric', 'Value']],
+        body: [
+          ['Total Revenue', `Rs. ${periodicData?.totalRevenue?.toLocaleString() || '0'}`],
+          ['Transaction Volume', `${periodicData?.totalSales || '0'} Sales`],
+          ['Avg. Invoice Value', `Rs. ${periodicData?.averageOrderValue?.toFixed(2) || '0.00'}`],
+          ['Items Sold', `${periodicData?.totalItemsSold || '0'} Units`]
+        ],
+        theme: 'striped',
+        headStyles: { fillColor: [99, 102, 241] }
+      });
+
+      // Detailed Sales Table
+      doc.text("Detailed Sales Activity", 14, (doc as any).lastAutoTable.finalY + 15);
+
+      const tableData = sales.map((s: any) => [
+        `#${s.invoiceId}`,
+        s.customerName,
+        s.staffName,
+        new Date(s.date).toLocaleDateString(),
+        s.paymentMethod,
+        `Rs. ${s.totalAmount.toLocaleString()}`
+      ]);
+
+      autoTable(doc, {
+        startY: (doc as any).lastAutoTable.finalY + 20,
+        head: [['ID', 'Customer', 'Staff', 'Date', 'Payment', 'Total']],
+        body: tableData,
+        theme: 'grid',
+        headStyles: { fillColor: [30, 41, 59] }
+      });
+
+      doc.save(`PartSphere_Report_${selectedPeriod}_${new Date().toISOString().split('T')[0]}.pdf`);
+      toast.dismiss();
+      toast.success("PDF report downloaded!");
+    } catch (e) {
+      toast.dismiss();
+      toast.error("Failed to generate PDF report");
+      console.error(e);
+    }
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      toast.loading("Preparing detailed report...");
+      const res = await api.get(`/admin/reports/sales-trends?range=${selectedPeriod}`);
+      const sales = res.data;
+
+      const csvRows = [
+        "Invoice ID,Customer,Staff,Date,Payment,Total (Rs.),Items"
+      ];
+
+      sales.forEach((s: any) => {
+        csvRows.push(`${s.invoiceId},"${s.customerName}","${s.staffName}",${new Date(s.date).toLocaleDateString()},${s.paymentMethod},${s.totalAmount},${s.itemCount}`);
+      });
+
+      const csvString = csvRows.join("\n");
+      const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `detailed_sales_${selectedPeriod}_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.dismiss();
+      toast.success("Detailed report exported!");
+    } catch (e) {
+      toast.dismiss();
+      toast.error("Failed to generate detailed report");
+    }
+  };
+
   const chartData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    labels: revenueTrend.length > 0 ? revenueTrend.map(t => t.month) : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     datasets: [
       {
-        label: 'Revenue 2026 ($)',
-        data: [42000, 49000, 45000, 52000, 58000, 62000, 65000, 72000, 78000, 85000, 92000, 105000],
+        label: 'Revenue (Rs.)',
+        data: revenueTrend.length > 0 ? revenueTrend.map(t => t.total) : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         borderColor: '#6366f1',
         backgroundColor: 'rgba(99, 102, 241, 0.1)',
         fill: true,
@@ -102,117 +248,157 @@ const Reports = () => {
       }
     },
     scales: {
-      y: { 
-        grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false }, 
-        ticks: { color: '#64748b', font: { size: 11 } } 
+      y: {
+        grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+        ticks: { color: '#64748b', font: { size: 11 } }
       },
-      x: { 
-        grid: { display: false }, 
-        ticks: { color: '#64748b', font: { size: 11 } } 
+      x: {
+        grid: { display: false },
+        ticks: { color: '#64748b', font: { size: 11 } }
       }
     }
   };
 
   if (loading) return (
-    <div style={{ height: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-      <motion.div 
+    <div style={{ height: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.5rem' }}>
+      <motion.div
         animate={{ rotate: 360 }}
         transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-        style={{ width: '40px', height: '40px', border: '3px solid rgba(99, 102, 241, 0.1)', borderTopColor: 'var(--accent-primary)', borderRadius: '50%' }}
+        style={{ width: '48px', height: '48px', border: '4px solid rgba(99, 102, 241, 0.1)', borderTopColor: 'var(--accent-primary)', borderRadius: '50%' }}
       />
-      <p style={{ color: 'var(--text-secondary)', fontWeight: '500' }}>Compiling Financial Intelligence...</p>
+      <div style={{ textAlign: 'center' }}>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.5rem' }}>Analyzing Financial Infrastructure</h3>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Fetching strategic revenue metrics...</p>
+      </div>
     </div>
   );
 
   return (
     <div className="animate-fade-in">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
         <div>
-          <h1 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '0.5rem', letterSpacing: '-0.02em' }}>
-            Financial <span className="text-gradient">Performance</span>
+          <h1 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '0.5rem', letterSpacing: '-0.04em' }}>
+            Executive <span className="text-gradient">Intelligence</span>
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>
-            Strategic insights into revenue streams and customer acquisition.
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', fontWeight: '500' }}>
+            Advanced financial reporting and customer acquisition analytics.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <button className="glass" style={{ padding: '12px 20px', background: 'rgba(255,255,255,0.03)', color: 'white', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Filter size={18} /> Filter
-          </button>
-          <button style={{ padding: '12px 24px', background: 'var(--accent-gradient)', color: 'white', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
-            <Download size={20} /> Export Dataset
-          </button>
+        <div style={{ display: 'flex', gap: '1rem', background: 'rgba(255,255,255,0.03)', padding: '6px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.05)' }}>
+          {(['daily', 'monthly', 'yearly'] as const).map(p => (
+            <button
+              key={p}
+              onClick={() => handlePeriodChange(p)}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '10px',
+                background: selectedPeriod === p ? 'var(--accent-gradient)' : 'transparent',
+                color: selectedPeriod === p ? 'white' : 'var(--text-muted)',
+                fontSize: '0.85rem',
+                fontWeight: '700',
+                textTransform: 'capitalize',
+                transition: 'all 0.2s'
+              }}
+            >
+              {p}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '1.5rem' }}>
-        <StatMiniCard label="Gross Revenue" value={`$${data?.monthRevenue?.toLocaleString()}`} trend="+12.5%" isPositive={true} />
-        <StatMiniCard label="Avg. Order Value" value="$482.50" trend="+4.2%" isPositive={true} />
-        <StatMiniCard label="New Customers" value={data?.totalCustomers} trend="+18%" isPositive={true} />
-        <StatMiniCard label="Active Credits" value={data?.pendingCredits} trend="-5.4%" isPositive={false} />
+      <div style={{ position: 'relative' }}>
+        {periodLoading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            style={{ position: 'absolute', inset: 0, background: 'rgba(10, 10, 15, 0.5)', zIndex: 10, backdropFilter: 'blur(2px)', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Activity className="animate-pulse" color="var(--accent-primary)" />
+          </motion.div>
+        )}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
+          <StatMiniCard
+            label={`${selectedPeriod} Revenue`}
+            value={`Rs. ${periodicData?.totalRevenue?.toLocaleString() || '0'}`}
+            trend="+12.5%"
+            isPositive={true}
+            icon={<DollarSign />}
+          />
+          <StatMiniCard
+            label="Volume"
+            value={periodicData?.totalSales || '0'}
+            trend="+4.2%"
+            isPositive={true}
+            icon={<History />}
+          />
+          <StatMiniCard
+            label="Avg. Invoice"
+            value={`Rs. ${periodicData?.averageOrderValue?.toFixed(2) || '0.00'}`}
+            trend="+2.1%"
+            isPositive={true}
+            icon={<TrendingUp />}
+          />
+          <StatMiniCard
+            label="Parts Sold"
+            value={periodicData?.totalItemsSold || '0'}
+            trend="+8%"
+            isPositive={true}
+            icon={<Package />}
+          />
+        </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="glass-card">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
             <div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: '700' }}>Revenue Growth</h3>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Projected vs Actual Revenue (USD)</p>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: '800', letterSpacing: '-0.02em' }}>Revenue Velocity</h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Trend analysis for the current fiscal year.</p>
             </div>
-            <div style={{ display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.03)', padding: '4px', borderRadius: '8px' }}>
-              <button style={{ fontSize: '0.75rem', padding: '6px 12px', background: 'var(--accent-primary)', borderRadius: '6px', color: 'white' }}>Monthly</button>
-              <button style={{ fontSize: '0.75rem', padding: '6px 12px', background: 'transparent', borderRadius: '6px', color: 'var(--text-muted)' }}>Quarterly</button>
-            </div>
-          </div>
-          <div style={{ height: '320px' }}>
-            <Line data={chartData} options={chartOptions} />
-          </div>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="glass-card" style={{ background: 'var(--accent-gradient)', border: 'none' }}>
-          <div style={{ color: 'white', height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ marginBottom: '2rem' }}>
-              <PieChart size={32} style={{ marginBottom: '1rem', opacity: 0.8 }} />
-              <h3 style={{ fontSize: '1.5rem', fontWeight: '800' }}>Market Insight</h3>
-              <p style={{ opacity: 0.8, fontSize: '0.9rem' }}>You've reached 85% of your sales target for this quarter. Keep pushing!</p>
-            </div>
-            <div style={{ marginTop: 'auto' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
-                <span>Quarter Progress</span>
-                <span>85%</span>
-              </div>
-              <div style={{ height: '6px', background: 'rgba(255,255,255,0.2)', borderRadius: '3px', overflow: 'hidden' }}>
-                <motion.div initial={{ width: 0 }} animate={{ width: '85%' }} transition={{ duration: 1.5 }} style={{ height: '100%', background: 'white' }} />
-              </div>
-              <button style={{ width: '100%', marginTop: '2rem', padding: '12px', background: 'white', color: 'var(--accent-primary)', borderRadius: '8px', fontWeight: '700', border: 'none' }}>
-                View Strategy Plan
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={handleExportCSV}
+                className="glass"
+                style={{ padding: '8px 16px', fontSize: '0.75rem', fontWeight: '700', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+              >
+                <Download size={14} /> CSV
+              </button>
+              <button
+                onClick={handleExportPDF}
+                className="glass"
+                style={{ padding: '8px 16px', fontSize: '0.75rem', fontWeight: '700', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', background: 'var(--accent-primary)', color: 'white', border: 'none' }}
+              >
+                <FileText size={14} /> PDF
               </button>
             </div>
+          </div>
+          <div style={{ height: '340px' }}>
+            <Line data={chartData} options={chartOptions} />
           </div>
         </motion.div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h3 style={{ fontWeight: '700' }}>Top Revenue Contributors</h3>
-            <Users size={18} color="var(--accent-primary)" />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+            <h3 style={{ fontWeight: '800', fontSize: '1.1rem', letterSpacing: '-0.01em' }}>Top Value Customers</h3>
+            <Users size={20} color="var(--accent-primary)" />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {data?.topSpenders?.map((spender: any, idx: number) => (
-              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'rgba(255,255,255,0.02)', borderRadius: '14px', border: '1px solid transparent', transition: 'all 0.2s' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '36px', height: '36px', background: 'var(--accent-gradient)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', fontWeight: '800', color: 'white' }}>
-                    {idx + 1}
+              <div key={idx} className="table-row-hover" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'rgba(255,255,255,0.01)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div style={{ width: '40px', height: '40px', background: 'var(--bg-tertiary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--glass-border)' }}>
+                    <User size={18} color="var(--accent-primary)" />
                   </div>
                   <div>
-                    <p style={{ fontWeight: '600', fontSize: '0.95rem' }}>{spender.customerName}</p>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{spender.orderCount} total orders</p>
+                    <p style={{ fontWeight: '700', fontSize: '0.95rem', color: 'white' }}>{spender.customerName}</p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '500' }}>{spender.orderCount} Transactions</p>
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontWeight: '700', color: 'white' }}>${spender.totalSpent.toLocaleString()}</p>
-                  <p style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: '600' }}>VIP Customer</p>
+                  <p style={{ fontWeight: '800', color: 'white', fontSize: '1rem' }}>Rs. {spender.totalSpent.toLocaleString()}</p>
+                  <span style={{ fontSize: '0.65rem', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '2px 8px', borderRadius: '10px', fontWeight: '700' }}>VIP TIER</span>
                 </div>
               </div>
             ))}
@@ -220,20 +406,23 @@ const Reports = () => {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h3 style={{ fontWeight: '700' }}>Loyal Customer Engagement</h3>
-            <TrendingUp size={18} color="var(--info)" />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+            <h3 style={{ fontWeight: '800', fontSize: '1.1rem', letterSpacing: '-0.01em' }}>Retention Analytics</h3>
+            <TrendingUp size={20} color="var(--info)" />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {data?.frequentCustomers?.map((customer: any, idx: number) => (
-              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'rgba(255,255,255,0.02)', borderRadius: '14px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '8px', height: '8px', background: idx === 0 ? 'var(--success)' : 'var(--info)', borderRadius: '50%' }} />
-                  <span style={{ fontWeight: '500' }}>{customer.customerName}</span>
+              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 18px', background: 'rgba(255,255,255,0.01)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div style={{ width: '10px', height: '100%', minHeight: '30px', background: idx === 0 ? 'var(--success)' : 'var(--info)', borderRadius: '5px', opacity: 0.6 }} />
+                  <div>
+                    <p style={{ fontWeight: '700', fontSize: '0.95rem' }}>{customer.customerName}</p>
+                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Last Visit: {new Date(customer.lastVisit).toLocaleDateString()}</p>
+                  </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>{customer.visitCount} visits</span>
-                  <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Last: {new Date(customer.lastVisit).toLocaleDateString()}</p>
+                  <span style={{ fontSize: '1rem', fontWeight: '800', color: 'white' }}>{customer.visitCount}</span>
+                  <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '700' }}>Visits</p>
                 </div>
               </div>
             ))}

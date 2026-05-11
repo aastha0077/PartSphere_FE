@@ -14,8 +14,9 @@ import {
   AlertCircle
 } from 'lucide-react';
 import api from '../../services/api';
-import { User } from '../../types';
+import type { User } from '../../types';
 import Modal from '../../components/common/Modal';
+import { toast } from 'sonner';
 
 const StaffManagement = () => {
   const [staff, setStaff] = useState<User[]>([]);
@@ -28,6 +29,7 @@ const StaffManagement = () => {
     password: '',
     role: 'Staff'
   });
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const fetchStaff = async () => {
     try {
@@ -42,24 +44,54 @@ const StaffManagement = () => {
 
   useEffect(() => { fetchStaff(); }, []);
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('/admin/staff', formData);
+      if (editingId) {
+        await api.put(`/admin/staff/${editingId}`, formData);
+        toast.success('Staff member updated successfully');
+      } else {
+        await api.post('/admin/staff', formData);
+        toast.success('Staff member registered successfully');
+      }
       setIsModalOpen(false);
       setFormData({ name: '', email: '', password: '', role: 'Staff' });
+      setEditingId(null);
       fetchStaff();
     } catch (err) {
-      console.error('Error creating staff member');
+      toast.error('Error saving staff member');
     }
+  };
+
+  const handleEdit = (user: User) => {
+    setEditingId(user.id);
+    setFormData({
+      name: user.name,
+      email: user.email,
+      password: '', // Leave empty unless changing
+      role: user.role as any
+    });
+    setIsModalOpen(true);
   };
 
   const toggleStatus = async (id: number) => {
     try {
-      await api.delete(`/admin/staff/${id}`);
+      await api.patch(`/admin/staff/${id}/toggle-status`);
+      toast.success('Personnel status updated');
       fetchStaff();
     } catch (err) {
-      console.error('Toggle status failed');
+      toast.error('Failed to update status');
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!window.confirm("Permanently delete this staff member? This cannot be undone.")) return;
+    try {
+      await api.delete(`/admin/staff/${id}`);
+      toast.success('Personnel removed permanently');
+      fetchStaff();
+    } catch (err) {
+      toast.error('Failed to delete staff member');
     }
   };
 
@@ -196,6 +228,23 @@ const StaffManagement = () => {
                   <td style={{ padding: '1.25rem', textAlign: 'right' }}>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                       <button 
+                        onClick={() => handleEdit(user)}
+                        style={{ 
+                          padding: '8px 12px', 
+                          background: 'rgba(255, 255, 255, 0.05)', 
+                          color: 'white',
+                          borderRadius: '8px',
+                          fontSize: '0.8rem',
+                          fontWeight: '700',
+                          border: '1px solid transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button 
                         onClick={() => toggleStatus(user.id)}
                         style={{ 
                           padding: '8px 16px', 
@@ -204,13 +253,24 @@ const StaffManagement = () => {
                           borderRadius: '8px',
                           fontSize: '0.8rem',
                           fontWeight: '700',
-                          border: '1px solid transparent',
+                          border: `1px solid ${user.isActive ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)'}`,
                           transition: 'all 0.2s ease'
                         }}
-                        onMouseEnter={(e) => e.currentTarget.style.borderColor = user.isActive ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)'}
-                        onMouseLeave={(e) => e.currentTarget.style.borderColor = 'transparent'}
                       >
                         {user.isActive ? 'Suspend' : 'Reinstate'}
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(user.id)}
+                        style={{ 
+                          padding: '8px', 
+                          background: 'rgba(239, 68, 68, 0.1)', 
+                          color: '#ef4444',
+                          borderRadius: '8px',
+                          border: 'none'
+                        }}
+                        title="Delete Permanently"
+                      >
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </td>
@@ -221,8 +281,8 @@ const StaffManagement = () => {
         </table>
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Register System Operator">
-        <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingId(null); setFormData({ name: '', email: '', password: '', role: 'Staff' }); }} title={editingId ? "Edit Personnel Details" : "Register System Operator"}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Full Name</label>
             <input 
@@ -245,16 +305,18 @@ const StaffManagement = () => {
             />
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Security Credentials</label>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+              {editingId ? "Update Password (Leave blank to keep current)" : "Security Credentials"}
+            </label>
             <div style={{ position: 'relative' }}>
               <Key size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               <input 
-                placeholder="Initial access password" 
+                placeholder={editingId ? "New password" : "Initial access password"} 
                 type="password" 
                 value={formData.password} 
                 onChange={e => setFormData({...formData, password: e.target.value})} 
                 style={{ width: '100%', padding: '12px 12px 12px 40px', background: 'var(--bg-tertiary)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }} 
-                required 
+                required={!editingId} 
               />
             </div>
           </div>

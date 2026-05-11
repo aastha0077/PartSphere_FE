@@ -9,6 +9,8 @@ export interface User {
 export interface VehiclePart {
   id: number;
   name: string;
+  brand: string;
+  sku: string;
   description: string;
   price: number;
   stockQuantity: number;
