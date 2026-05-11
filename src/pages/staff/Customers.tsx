@@ -1,13 +1,45 @@
-import React, { useEffect, useState } from 'react';
-import { Users, UserPlus, Phone, Mail, Car, History, Edit2 } from 'lucide-react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { 
+  Users, 
+  UserPlus, 
+  Phone, 
+  Mail, 
+  Car, 
+  History, 
+  Edit2, 
+  Search, 
+  MapPin, 
+  CreditCard, 
+  Calendar, 
+  ExternalLink,
+  Send,
+  X,
+  Package,
+  ArrowRight
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/api';
-import { Customer } from '../../types';
+import type { Customer } from '../../types';
 import Modal from '../../components/common/Modal';
+import { toast } from 'sonner';
+
+interface CustomerHistory {
+  customer: Customer;
+  vehicles: any[];
+  purchases: any[];
+  appointments: any[];
+  totalSpent: number;
+  isLoyalCustomer: boolean;
+}
 
 const Customers = () => {
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedHistory, setSelectedHistory] = useState<CustomerHistory | null>(null);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -15,86 +47,319 @@ const Customers = () => {
     address: ''
   });
 
-  const fetchCustomers = async () => {
+  const fetchCustomers = useCallback(async (query = '') => {
+    setLoading(true);
     try {
-      const res = await api.get('/staff/customers');
+      const endpoint = query ? `/staff/customers/search?query=${encodeURIComponent(query)}` : '/staff/customers';
+      const res = await api.get(endpoint);
       setCustomers(res.data);
     } catch (err) {
-      console.error('Failed to fetch customers');
+      toast.error('Failed to synchronize customer database');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { fetchCustomers(); }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchCustomers(searchQuery);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery, fetchCustomers]);
+
+  const fetchHistory = async (id: number) => {
+    setIsHistoryLoading(true);
+    try {
+      const res = await api.get(`/staff/customers/${id}/history`);
+      setSelectedHistory(res.data);
+    } catch (err) {
+      toast.error('Failed to retrieve customer archives');
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await api.post('/staff/customers', formData);
+      toast.success('New customer profile established');
       setIsModalOpen(false);
+      setFormData({ name: '', email: '', phone: '', address: '' });
       fetchCustomers();
     } catch (err) {
-      alert('Error registering customer');
+      toast.error('Registration failed. Please verify contact details.');
+    }
+  };
+
+  const sendInvoiceEmail = async (id: number) => {
+    try {
+      await api.post(`/orders/${id}/email`);
+      toast.success('Invoice dispatched to customer email');
+    } catch (err) {
+      toast.error('Dispatch failed. Customer may not have a valid email.');
     }
   };
 
   return (
     <div className="animate-fade-in">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2.5rem' }}>
         <div>
-          <h1 style={{ fontSize: '2rem' }}>Customer <span className="text-gradient">CRM</span></h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Manage your customer base and their vehicle history.</p>
+          <h1 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '0.5rem', letterSpacing: '-0.02em' }}>
+            Customer <span className="text-gradient">Registry</span>
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>
+            Search, manage, and audit customer vehicle relationships.
+          </p>
         </div>
-        <button onClick={() => setIsModalOpen(true)} className="glass" style={{ padding: '12px 24px', background: 'var(--accent-gradient)', color: 'white', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
-          <UserPlus size={20} /> Register Customer
+        <button 
+          onClick={() => setIsModalOpen(true)} 
+          style={{ 
+            padding: '12px 24px', 
+            background: 'var(--accent-gradient)', 
+            color: 'white', 
+            borderRadius: 'var(--radius-md)', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px', 
+            fontWeight: '700',
+            boxShadow: '0 10px 20px -10px rgba(99, 102, 241, 0.5)'
+          }}
+        >
+          <UserPlus size={20} /> New Profile
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
-        {loading ? <p>Loading customers...</p> : customers.map(customer => (
-          <div key={customer.id} className="glass-card">
+      <div className="glass-card" style={{ marginBottom: '2rem', padding: '1rem' }}>
+        <div style={{ position: 'relative' }}>
+          <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <input 
+            type="text" 
+            placeholder="Search by name, phone, ID, or vehicle number..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px 12px 12px 40px',
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid var(--glass-border)',
+              borderRadius: 'var(--radius-md)',
+              color: 'white'
+            }}
+          />
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '1.5rem' }}>
+        {loading ? (
+           Array.from({ length: 3 }).map((_, i) => (
+             <div key={i} className="glass-card animate-pulse" style={{ height: '220px' }} />
+           ))
+        ) : customers.map(customer => (
+          <motion.div 
+            key={customer.id} 
+            layout
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="glass-card table-row-hover"
+            style={{ position: 'relative' }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
               <div style={{ display: 'flex', gap: '1rem' }}>
-                <div style={{ width: '48px', height: '48px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Users size={24} />
+                <div style={{ width: '52px', height: '52px', background: 'var(--accent-gradient)', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800' }}>
+                  {customer.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '1.1rem' }}>{customer.name}</h3>
-                  <p style={{ color: 'var(--accent-secondary)', fontSize: '0.8rem', fontWeight: '600' }}>{customer.loyaltyPoints} Points</p>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: '700' }}>{customer.name}</h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--accent-secondary)', fontWeight: '800', background: 'rgba(99, 102, 241, 0.1)', padding: '2px 8px', borderRadius: '20px' }}>
+                       ID: #{customer.id}
+                    </span>
+                    {customer.totalSpent > 5000 && (
+                      <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: '800', background: 'rgba(16, 185, 129, 0.1)', padding: '2px 8px', borderRadius: '20px' }}>
+                        VIP LOYALTY
+                      </span>
+                    )}
+                    <span style={{ fontSize: '0.75rem', color: '#f59e0b', fontWeight: '800', background: 'rgba(245, 158, 11, 0.1)', padding: '2px 8px', borderRadius: '20px' }}>
+                       {customer.loyaltyPoints || 0} PTS
+                    </span>
+                  </div>
                 </div>
               </div>
-              <button style={{ color: 'var(--text-muted)', background: 'transparent' }}><Edit2 size={18} /></button>
+              <button onClick={() => fetchHistory(customer.id)} style={{ color: 'var(--accent-primary)', background: 'transparent' }}><ExternalLink size={20} /></button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                <Mail size={16} /> {customer.email}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                <Phone size={14} className="text-indigo-400" /> {customer.phone}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                <Phone size={16} /> {customer.phone}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                <Car size={14} className="text-indigo-400" /> {customer.vehicleNumbers?.join(', ') || 'No Vehicles'}
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button style={{ flex: 1, padding: '10px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                <Car size={16} /> Vehicles
-              </button>
-              <button style={{ flex: 1, padding: '10px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                <History size={16} /> History
+              <button 
+                onClick={() => fetchHistory(customer.id)}
+                style={{ flex: 1, padding: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--glass-border)', borderRadius: '10px', fontSize: '0.85rem', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              >
+                <History size={16} /> Audit History
               </button>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
 
+      {/* Customer Detail Modal */}
+      <Modal 
+        isOpen={!!selectedHistory} 
+        onClose={() => setSelectedHistory(null)} 
+        title={`${selectedHistory?.customer.name}'s Profile`}
+        maxWidth="1000px"
+      >
+        <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '2rem' }}>
+          {/* Profile Sidebar */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+             <div className="glass-card" style={{ textAlign: 'center', padding: '2rem 1rem' }}>
+                <div style={{ width: '80px', height: '80px', margin: '0 auto 1rem', background: 'var(--accent-gradient)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: '800', color: 'white' }}>
+                   {selectedHistory?.customer.name[0]}
+                </div>
+                <h2 style={{ fontWeight: '800' }}>{selectedHistory?.customer.name}</h2>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Customer since {new Date().getFullYear()}</p>
+             </div>
+
+             <div className="glass-card" style={{ padding: '1.25rem' }}>
+                <h4 style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '1rem' }}>Contact Intel</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.9rem' }}>
+                      <Phone size={16} className="text-indigo-400" /> {selectedHistory?.customer.phone}
+                   </div>
+                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.9rem' }}>
+                      <Mail size={16} className="text-indigo-400" /> {selectedHistory?.customer.email}
+                   </div>
+                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '0.9rem' }}>
+                      <MapPin size={16} className="text-indigo-400" style={{ marginTop: '2px' }} /> {selectedHistory?.customer.address}
+                   </div>
+                </div>
+             </div>
+
+             <div className="glass-card" style={{ padding: '1.25rem', background: 'var(--accent-gradient)', border: 'none' }}>
+                <p style={{ fontSize: '0.8rem', opacity: 0.8, fontWeight: '700' }}>LIFETIME SPEND</p>
+                <h2 style={{ fontSize: '2rem', fontWeight: '900', color: 'white' }}>Rs. {selectedHistory?.totalSpent.toLocaleString()}</h2>
+                {selectedHistory?.isLoyalCustomer && (
+                   <div style={{ marginTop: '0.5rem', background: 'rgba(255,255,255,0.2)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '800', color: 'white' }}>
+                      LOYALTY TIER ACTIVATED
+                   </div>
+                )}
+             </div>
+          </div>
+
+          {/* Activity Tabs */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+             {/* Vehicles */}
+             <section>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                   <Car size={20} color="var(--accent-primary)" /> Registered Assets
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                   {selectedHistory?.vehicles.map((v, i) => (
+                      <div key={i} className="glass-card" style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)' }}>
+                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontWeight: '800', fontSize: '1rem' }}>{v.brand} {v.model}</span>
+                            <span style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--accent-primary)', background: 'rgba(99, 102, 241, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>{v.vehicleNumber}</span>
+                         </div>
+                         <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                            Mileage: {v.mileage.toLocaleString()} KM
+                         </div>
+                      </div>
+                   ))}
+                </div>
+             </section>
+
+             {/* Purchase History */}
+             <section>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                   <CreditCard size={20} color="var(--success)" /> Purchase History
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                   {selectedHistory?.purchases.map((p, i) => (
+                      <div key={i} className="glass-card" style={{ padding: '1rem' }}>
+                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                            <div>
+                               <p style={{ fontSize: '0.85rem', fontWeight: '800' }}>Invoice #{p.id}</p>
+                               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(p.date).toLocaleDateString()}</p>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                               <p style={{ fontWeight: '800', fontSize: '1.1rem' }}>Rs. {p.totalAmount.toLocaleString()}</p>
+                               <button 
+                                 onClick={() => sendInvoiceEmail(p.id)}
+                                 style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--accent-primary)', background: 'transparent', display: 'flex', alignItems: 'center', gap: '4px', padding: 0 }}
+                               >
+                                  <Send size={12} /> Email Invoice
+                               </button>
+                            </div>
+                         </div>
+                         <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.75rem', borderRadius: '8px' }}>
+                            {p.items.map((item: any, idx: number) => (
+                               <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                  <span>{item.quantity}x {item.partName}</span>
+                                  <span>Rs. {item.totalPrice.toLocaleString()}</span>
+                               </div>
+                            ))}
+                         </div>
+                      </div>
+                   ))}
+                </div>
+             </section>
+
+             {/* Appointments */}
+             <section>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                   <Calendar size={20} color="var(--warning)" /> Appointments
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                   {selectedHistory?.appointments.map((a, i) => (
+                      <div key={i} className="glass-card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                         <div>
+                            <p style={{ fontSize: '0.85rem', fontWeight: '700' }}>{a.description}</p>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(a.date).toLocaleString()}</p>
+                         </div>
+                         <span style={{ fontSize: '0.7rem', fontWeight: '800', color: a.status === 'Completed' ? 'var(--success)' : 'var(--warning)', background: 'rgba(255,255,255,0.05)', padding: '4px 10px', borderRadius: '20px' }}>
+                            {a.status}
+                         </span>
+                      </div>
+                   ))}
+                </div>
+             </section>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Registration Modal */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="New Customer Registration">
-        <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <input placeholder="Full Name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="glass" style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} required />
-          <input placeholder="Email Address" type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="glass" style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} required />
-          <input placeholder="Phone Number" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} className="glass" style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} required />
-          <textarea placeholder="Home Address" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} className="glass" style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white', minHeight: '80px' }} />
-          <button type="submit" style={{ padding: '12px', background: 'var(--accent-gradient)', borderRadius: '8px', color: 'white', fontWeight: 'bold', marginTop: '1rem' }}>Register Customer</button>
+        <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div>
+             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Full Identity</label>
+             <input placeholder="e.g. John Doe" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="glass" style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid var(--glass-border)', color: 'white' }} required />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+             <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Email</label>
+                <input placeholder="j.doe@example.com" type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="glass" style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid var(--glass-border)', color: 'white' }} required />
+             </div>
+             <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Phone</label>
+                <input placeholder="+977 98XXXXXXXX" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} className="glass" style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid var(--glass-border)', color: 'white' }} required />
+             </div>
+          </div>
+          <div>
+             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Residential Address</label>
+             <textarea placeholder="Primary residence for billing..." value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} className="glass" style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid var(--glass-border)', color: 'white', minHeight: '100px' }} />
+          </div>
+          
+          <button type="submit" style={{ padding: '16px', background: 'var(--accent-gradient)', borderRadius: '12px', color: 'white', fontWeight: '800', marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+            Register Customer <ArrowRight size={18} />
+          </button>
         </form>
       </Modal>
     </div>

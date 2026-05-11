@@ -1,19 +1,39 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { UserPlus, Mail, Lock, ShieldCheck, User } from 'lucide-react';
+import { UserPlus, Mail, Lock, ShieldCheck, User, AlertCircle, CheckCircle } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { toast } from 'sonner';
 
 const Signup = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  
   const navigate = useNavigate();
+  const { register } = useAuth();
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Implementation for signup would go here
-    console.log('Signup attempted', { name, email, password });
-    navigate('/login');
+    setError(null);
+    setLoading(true);
+
+    try {
+      await register({ name, email, password });
+      setSuccess(true);
+      toast.success('Account created! Welcome to PartSphere.');
+      // Wait 2 seconds then redirect to login
+      setTimeout(() => navigate('/login'), 2000);
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Registration failed. Please check your details.';
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -54,9 +74,23 @@ const Signup = () => {
           }}>
             <ShieldCheck size={32} color="white" />
           </div>
-          <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Join Part<span className="text-gradient">Sphere</span></h1>
+          <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', color: 'white' }}>Join Part<span className="text-gradient">Sphere</span></h1>
           <p style={{ color: 'var(--text-secondary)' }}>Create your account to get started</p>
         </div>
+
+        {success && (
+          <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center gap-3 animate-in zoom-in-95 duration-300">
+            <CheckCircle size={24} className="text-emerald-400" />
+            <p className="text-sm text-emerald-300 font-medium">Account created! Redirecting to login...</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3">
+            <AlertCircle size={18} className="text-red-400 mt-0.5" />
+            <p className="text-sm text-red-300">{error}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSignup}>
           <div style={{ marginBottom: '1.25rem' }}>
@@ -69,6 +103,7 @@ const Signup = () => {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Aastha Aryal"
                 required
+                disabled={loading || success}
                 style={{
                   width: '100%',
                   padding: '12px 12px 12px 40px',
@@ -91,6 +126,7 @@ const Signup = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
                 required
+                disabled={loading || success}
                 style={{
                   width: '100%',
                   padding: '12px 12px 12px 40px',
@@ -113,6 +149,7 @@ const Signup = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
+                disabled={loading || success}
                 style={{
                   width: '100%',
                   padding: '12px 12px 12px 40px',
@@ -127,11 +164,12 @@ const Signup = () => {
 
           <button
             type="submit"
+            disabled={loading || success}
             style={{
               width: '100%',
               padding: '14px',
-              background: 'var(--accent-gradient)',
-              color: 'white',
+              background: (loading || success) ? 'rgba(255,255,255,0.05)' : 'var(--accent-gradient)',
+              color: (loading || success) ? 'var(--text-muted)' : 'white',
               fontWeight: '600',
               borderRadius: 'var(--radius-md)',
               display: 'flex',
@@ -139,11 +177,17 @@ const Signup = () => {
               justifyContent: 'center',
               gap: '10px',
               transition: 'var(--transition)',
-              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)'
+              boxShadow: (loading || success) ? 'none' : '0 4px 12px rgba(99, 102, 241, 0.2)'
             }}
           >
-            <UserPlus size={20} />
-            Create Account
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            ) : (
+              <>
+                <UserPlus size={20} />
+                Create Account
+              </>
+            )}
           </button>
         </form>
 

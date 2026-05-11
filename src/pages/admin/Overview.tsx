@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import { toast } from 'sonner';
 
 const DashboardCard = ({ title, value, icon, change, isPositive, delay = 0 }: any) => (
   <motion.div 
@@ -117,7 +118,7 @@ const Overview = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await api.get('/admin/reports/dashboard');
+        const res = await api.get('/admin/reports/financial-summary');
         setStats(res.data);
       } catch (err) {
         console.error('Failed to fetch dashboard stats');
@@ -159,7 +160,50 @@ const Overview = () => {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <button style={{ padding: '10px 16px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button 
+            onClick={async () => {
+              try {
+                toast.loading("Generating system report...");
+                const res = await api.get('/admin/reports/sales-trends?range=monthly');
+                const sales = res.data;
+                
+                const csvRows = [
+                  "System Report - PartSphere",
+                  `Export Date,${new Date().toLocaleString()}`,
+                  "",
+                  "SUMMARY METRICS",
+                  `Monthly Revenue,Rs. ${stats?.monthRevenue || 0}`,
+                  `Total Inventory,${stats?.totalParts || 0}`,
+                  `Low Stock Items,${stats?.lowStockCount || 0}`,
+                  `Total Staff,${stats?.totalStaff || 0}`,
+                  "",
+                  "RECENT SALES TRANSACTIONS",
+                  "Invoice ID,Customer,Staff,Date,Method,Amount (Rs.),Items"
+                ];
+
+                sales.forEach((s: any) => {
+                  csvRows.push(`${s.invoiceId},"${s.customerName}","${s.staffName}",${new Date(s.date).toLocaleDateString()},${s.paymentMethod},${s.totalAmount},${s.itemCount}`);
+                });
+
+                const csvString = csvRows.join("\n");
+                const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", `PartsSphere_System_Report_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                toast.dismiss();
+                toast.success("System report exported!");
+              } catch (err) {
+                toast.dismiss();
+                toast.error("Failed to generate report");
+              }
+            }}
+            style={{ padding: '10px 16px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', color: 'white', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+          >
             <FileText size={18} />
             Export Report
           </button>
@@ -174,7 +218,7 @@ const Overview = () => {
       }}>
         <DashboardCard 
           title="Monthly Revenue" 
-          value={`$${stats?.monthRevenue?.toLocaleString() || '0'}`}
+          value={`Rs. ${stats?.monthRevenue?.toLocaleString() || '0'}`}
           icon={<DollarSign size={28} />}
           change="+14.2%"
           isPositive={true}
@@ -249,7 +293,7 @@ const Overview = () => {
                         fontWeight: '600'
                       }}>Success</span>
                     </td>
-                    <td style={{ padding: '1rem', fontWeight: '700', color: 'white' }}>${sale.totalAmount.toFixed(2)}</td>
+                    <td style={{ padding: '1rem', fontWeight: '700', color: 'white' }}>Rs. {sale.totalAmount.toLocaleString()}</td>
                     <td style={{ padding: '1rem', borderRadius: '0 12px 12px 0', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
                       {new Date(sale.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>

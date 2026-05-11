@@ -10,8 +10,9 @@ import {
   ChevronRight,
   Package
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import api from '../../services/api';
-import { VehiclePart, Customer } from '../../types';
+import type { VehiclePart, Customer } from '../../types';
 
 interface CartItem extends VehiclePart {
   quantity: number;
@@ -29,10 +30,10 @@ const POS = () => {
     const fetchData = async () => {
       try {
         const [partsRes, customersRes] = await Promise.all([
-          api.get('/staff/parts'),
+          api.get('/parts?pageSize=1000'),
           api.get('/staff/customers')
         ]);
-        setParts(partsRes.data);
+        setParts(partsRes.data.items || []);
         setCustomers(customersRes.data);
       } catch (err) {
         console.error('POS data fetch failed');
@@ -76,26 +77,27 @@ const POS = () => {
   const discount = subtotal > 5000 ? subtotal * 0.1 : 0;
   const total = subtotal - discount;
 
-  const handleCheckout = async (paymentMethod: string) => {
+  const handleCheckout = async (paymentStatus: string) => {
     if (cart.length === 0 || !selectedCustomer) return;
 
     try {
-      await api.post('/staff/sales', {
+      await api.post('/orders', {
         customerId: selectedCustomer.id,
-        paymentMethod,
+        paymentMethod: 'Cash', // Defaulting since requirement focused on Status
+        paymentStatus: paymentStatus,
         items: cart.map(item => ({
           vehiclePartId: item.id,
           quantity: item.quantity
         }))
       });
-      alert('Sale completed successfully!');
+      toast.success(`Order completed with status: ${paymentStatus}!`);
       setCart([]);
       setSelectedCustomer(null);
-      // Refresh parts to show updated stock
-      const partsRes = await api.get('/staff/parts');
-      setParts(partsRes.data);
+      
+      const partsRes = await api.get('/parts?pageSize=1000');
+      setParts(partsRes.data.items || []);
     } catch (err) {
-      alert('Checkout failed. Please check stock levels.');
+      toast.error('Checkout failed. Please check stock levels.');
     }
   };
 
@@ -162,7 +164,7 @@ const POS = () => {
               <h3 style={{ fontSize: '1rem', marginBottom: '0.25rem' }}>{part.name}</h3>
               <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>{part.category}</p>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontWeight: '700', fontSize: '1.125rem' }}>${part.price.toFixed(2)}</span>
+                <span style={{ fontWeight: '700', fontSize: '1.125rem' }}>Rs. {part.price.toLocaleString()}</span>
                 <span style={{ 
                   fontSize: '0.75rem', 
                   color: part.stockQuantity < 5 ? 'var(--danger)' : 'var(--success)'
@@ -227,7 +229,7 @@ const POS = () => {
             }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '0.9rem', fontWeight: '600' }}>{item.name}</div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>${item.price.toFixed(2)} / unit</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Rs. {item.price.toLocaleString()} / unit</div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <button onClick={() => updateQuantity(item.id, -1)} style={{ padding: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px' }}><Minus size={14} /></button>
@@ -243,49 +245,45 @@ const POS = () => {
         <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '1.5rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ color: 'var(--text-secondary)' }}>Subtotal</span>
-            <span>${subtotal.toFixed(2)}</span>
+            <span>Rs. {subtotal.toLocaleString()}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ color: 'var(--text-secondary)' }}>Loyalty Discount</span>
-            <span style={{ color: 'var(--success)' }}>-${discount.toFixed(2)}</span>
+            <span style={{ color: 'var(--success)' }}>-Rs. {discount.toLocaleString()}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--glass-border)', paddingTop: '8px', marginTop: '4px' }}>
             <span style={{ fontWeight: '700' }}>Total</span>
-            <span style={{ fontWeight: '700', fontSize: '1.25rem' }}>${total.toFixed(2)}</span>
+            <span style={{ fontWeight: '700', fontSize: '1.25rem' }}>Rs. {total.toLocaleString()}</span>
           </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <button 
             disabled={!selectedCustomer || cart.length === 0}
-            onClick={() => handleCheckout('Cash')}
+            onClick={() => handleCheckout('PAID')}
             style={{ 
               padding: '12px', 
-              background: 'rgba(255,255,255,0.05)', 
+              background: 'var(--success)', 
               borderRadius: 'var(--radius-md)',
               fontWeight: '600',
               opacity: (!selectedCustomer || cart.length === 0) ? 0.5 : 1
             }}
           >
-            Cash
+            Mark PAID
           </button>
           <button 
             disabled={!selectedCustomer || cart.length === 0}
-            onClick={() => handleCheckout('Card')}
+            onClick={() => handleCheckout('CREDIT')}
             style={{ 
               padding: '12px', 
-              background: 'var(--accent-gradient)', 
+              background: 'var(--warning)', 
               borderRadius: 'var(--radius-md)',
               fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              opacity: (!selectedCustomer || cart.length === 0) ? 0.5 : 1
+              opacity: (!selectedCustomer || cart.length === 0) ? 0.5 : 1,
+              color: 'black'
             }}
           >
-            <CreditCard size={18} />
-            Card
+            Issue CREDIT
           </button>
         </div>
       </div>
