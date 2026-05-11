@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
@@ -7,20 +8,24 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  maxWidth?: string;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
-  return (
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, maxWidth = '600px' }) => {
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <div style={{
           position: 'fixed',
           inset: 0,
-          zIndex: 1000,
+          zIndex: 9999,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '1rem'
+          padding: '1rem',
+          pointerEvents: 'auto'
         }}>
           <motion.div
             initial={{ opacity: 0 }}
@@ -30,8 +35,8 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'rgba(0, 0, 0, 0.8)',
-              backdropFilter: 'blur(4px)'
+              background: 'rgba(0, 0, 0, 0.85)',
+              backdropFilter: 'blur(8px)'
             }}
           />
           <motion.div
@@ -41,24 +46,45 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
             className="glass"
             style={{
               width: '100%',
-              maxWidth: '600px',
+              maxWidth: maxWidth,
+              maxHeight: '90vh',
+              overflowY: 'auto',
               padding: '2rem',
               borderRadius: 'var(--radius-xl)',
               position: 'relative',
-              zIndex: 1
+              zIndex: 10000,
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.5rem' }}>{title}</h2>
-              <button onClick={onClose} style={{ color: 'var(--text-secondary)', background: 'transparent' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', position: 'sticky', top: 0, background: 'transparent', zIndex: 10 }}>
+              <h2 style={{ fontSize: '1.75rem', fontWeight: '800' }}>{title}</h2>
+              <button 
+                onClick={onClose} 
+                style={{ 
+                  width: '40px', 
+                  height: '40px', 
+                  borderRadius: '50%', 
+                  background: 'rgba(255,255,255,0.05)', 
+                  color: 'white', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+              >
                 <X size={24} />
               </button>
             </div>
-            {children}
+            <div style={{ position: 'relative' }}>
+              {children}
+            </div>
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
 
