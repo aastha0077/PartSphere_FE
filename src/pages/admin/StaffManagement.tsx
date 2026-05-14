@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, 
@@ -17,12 +17,15 @@ import api from '../../services/api';
 import type { User } from '../../types';
 import Modal from '../../components/common/Modal';
 import { toast } from 'sonner';
+import TablePagination from '../../components/common/TablePagination';
 
 const StaffManagement = () => {
   const [staff, setStaff] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -43,6 +46,31 @@ const StaffManagement = () => {
   };
 
   useEffect(() => { fetchStaff(); }, []);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
+
+  const filteredStaff = useMemo(
+    () =>
+      staff.filter(
+        (s) =>
+          s.name.toLowerCase().includes(search.toLowerCase()) ||
+          s.email.toLowerCase().includes(search.toLowerCase())
+      ),
+    [staff, search]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredStaff.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pagedStaff = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return filteredStaff.slice(start, start + pageSize);
+  }, [filteredStaff, safePage, pageSize]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -164,7 +192,9 @@ const StaffManagement = () => {
             <AnimatePresence>
               {loading ? (
                 <tr><td colSpan={5} style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>Synchronizing personnel records...</td></tr>
-              ) : filteredStaff.map((user, idx) => (
+              ) : filteredStaff.length === 0 ? (
+                <tr><td colSpan={5} style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>No personnel match your search.</td></tr>
+              ) : pagedStaff.map((user, idx) => (
                 <motion.tr 
                   key={user.id} 
                   initial={{ opacity: 0, y: 10 }}
@@ -279,6 +309,16 @@ const StaffManagement = () => {
             </AnimatePresence>
           </tbody>
         </table>
+        {!loading && filteredStaff.length > 0 && (
+          <TablePagination
+            page={page}
+            pageSize={pageSize}
+            total={filteredStaff.length}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            itemLabel="accounts"
+          />
+        )}
       </div>
 
       <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingId(null); setFormData({ name: '', email: '', password: '', role: 'Staff' }); }} title={editingId ? "Edit Personnel Details" : "Register System Operator"}>

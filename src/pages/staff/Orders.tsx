@@ -1,12 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ShoppingCart, Search, Eye, Download, Calendar, Filter, Mail, CheckCircle } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from 'sonner';
+import TablePagination from '../../components/common/TablePagination';
 
 const Orders = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
 
   useEffect(() => {
     fetchOrders();
@@ -16,7 +23,12 @@ const Orders = () => {
     try {
       setLoading(true);
       const res = await api.get('/orders');
-      setOrders(res.data);
+      const list = Array.isArray(res.data) ? res.data : [];
+      list.sort(
+        (a: any, b: any) =>
+          new Date(b.date).getTime() - new Date(a.date).getTime() || (b.id ?? 0) - (a.id ?? 0)
+      );
+      setOrders(list);
     } catch (err) {
       toast.error('Failed to load orders data');
       console.error(err);
@@ -46,11 +58,32 @@ const Orders = () => {
     }
   };
 
-  const filteredOrders = orders.filter(s =>
-    s.id.toString().includes(searchQuery) ||
-    s.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.staffName?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredOrders = useMemo(
+    () =>
+      orders
+        .filter(
+          (s) =>
+            s.id.toString().includes(searchQuery) ||
+            s.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            s.staffName?.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        .sort(
+          (a, b) =>
+            new Date(b.date).getTime() - new Date(a.date).getTime() || (b.id ?? 0) - (a.id ?? 0)
+        ),
+    [orders, searchQuery]
   );
+
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pagedOrders = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return filteredOrders.slice(start, start + pageSize);
+  }, [filteredOrders, safePage, pageSize]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   return (
     <div className="animate-fade-in">
@@ -83,6 +116,7 @@ const Orders = () => {
             <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
         ) : (
+          <>
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-white/[0.02] border-b border-white/5">
@@ -104,7 +138,7 @@ const Orders = () => {
                   </td>
                 </tr>
               ) : (
-                filteredOrders.map((order) => (
+                pagedOrders.map((order) => (
                   <tr key={order.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
                     <td className="p-4 font-mono text-sm text-white">#{order.id}</td>
                     <td className="p-4 text-gray-300">
@@ -152,6 +186,17 @@ const Orders = () => {
               )}
             </tbody>
           </table>
+          {!loading && filteredOrders.length > 0 && (
+            <TablePagination
+              page={page}
+              pageSize={pageSize}
+              total={filteredOrders.length}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              itemLabel="orders"
+            />
+          )}
+          </>
         )}
       </div>
     </div>

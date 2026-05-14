@@ -10,7 +10,13 @@ const CustomerHistory = () => {
     const fetchHistory = async () => {
       try {
         const res = await api.get('/customer/history');
-        setHistory(res.data.purchases || res.data); // DTO map depending on what the API returns exactly
+        const raw = res.data.purchases ?? res.data;
+        const list = Array.isArray(raw) ? [...raw] : [];
+        list.sort(
+          (a: any, b: any) =>
+            new Date(b.date).getTime() - new Date(a.date).getTime() || (b.id ?? 0) - (a.id ?? 0)
+        );
+        setHistory(list);
       } catch (err) {
         console.error('Failed to load history');
       } finally {

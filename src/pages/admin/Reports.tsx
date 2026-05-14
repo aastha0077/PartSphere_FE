@@ -26,7 +26,8 @@ import {
   Package,
   Activity,
   History,
-  User
+  User,
+  FileText
 } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from 'sonner';
