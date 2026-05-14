@@ -47,6 +47,8 @@ const CustomerPortal = () => {
     cardCVC: ''
   });
   const [lastOrder, setLastOrder] = useState<any>(null);
+  const [myVehicles, setMyVehicles] = useState<any[]>([]);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
 
   useEffect(() => {
     localStorage.setItem('partsphere_cart', JSON.stringify(cart));
@@ -62,19 +64,27 @@ const CustomerPortal = () => {
   useEffect(() => {
     const fetchPortalData = async () => {
     try {
-      const [partsRes, historyRes, aiRes, requestsRes, appointmentsRes] = await Promise.allSettled([
+      const [partsRes, historyRes, requestsRes, appointmentsRes, vehiclesRes] = await Promise.allSettled([
         api.get('/customer/parts'),
         api.get('/customer/history'),
-        api.get('/ai/predictive-maintenance/1'), // Mocking vehicle ID 1 for now
         api.get('/customer/part-requests'),
-        api.get('/customer/appointments')
+        api.get('/customer/appointments'),
+        api.get('/vehicle/my-vehicles')
       ]);
 
       if (partsRes.status === 'fulfilled') setParts(partsRes.value.data.items || partsRes.value.data);
       if (historyRes.status === 'fulfilled') setHistory(historyRes.value.data);
-      if (aiRes.status === 'fulfilled') setSuggestions(aiRes.value.data);
       if (requestsRes.status === 'fulfilled') setRequests(requestsRes.value.data);
       if (appointmentsRes.status === 'fulfilled') setAppointments(appointmentsRes.value.data);
+
+      if (vehiclesRes.status === 'fulfilled' && Array.isArray(vehiclesRes.value.data) && vehiclesRes.value.data.length > 0) {
+        setMyVehicles(vehiclesRes.value.data);
+        setSelectedVehicleId(vehiclesRes.value.data[0].id);
+      } else {
+        setMyVehicles([]);
+        setSelectedVehicleId(null);
+        setSuggestions([]);
+      }
 
     } catch (err) {
       console.error('Failed to fetch portal data', err);
@@ -83,6 +93,19 @@ const CustomerPortal = () => {
   };
     fetchPortalData();
   }, []);
+
+  useEffect(() => {
+    if (selectedVehicleId == null) return;
+    const loadMaintenance = async () => {
+      try {
+        const res = await api.get(`/customer/vehicles/${selectedVehicleId}/predictive-maintenance`);
+        setSuggestions(Array.isArray(res.data) ? res.data : []);
+      } catch {
+        setSuggestions([]);
+      }
+    };
+    loadMaintenance();
+  }, [selectedVehicleId]);
 
   const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,19 +183,26 @@ const CustomerPortal = () => {
       toast.success('Order placed successfully!');
       
       // Refresh portal data
-      const [partsRes, historyRes, aiRes, requestsRes, appointmentsRes] = await Promise.allSettled([
+      const [partsRes, historyRes, requestsRes, appointmentsRes] = await Promise.allSettled([
         api.get('/customer/parts'),
         api.get('/customer/history'),
-        api.get('/ai/predictive-maintenance/1'),
         api.get('/customer/part-requests'),
         api.get('/customer/appointments')
       ]);
 
       if (partsRes.status === 'fulfilled') setParts(partsRes.value.data.items || partsRes.value.data);
       if (historyRes.status === 'fulfilled') setHistory(historyRes.value.data);
-      if (aiRes.status === 'fulfilled') setSuggestions(aiRes.value.data);
       if (requestsRes.status === 'fulfilled') setRequests(requestsRes.value.data);
       if (appointmentsRes.status === 'fulfilled') setAppointments(appointmentsRes.value.data);
+
+      if (selectedVehicleId != null) {
+        try {
+          const aiRes = await api.get(`/customer/vehicles/${selectedVehicleId}/predictive-maintenance`);
+          setSuggestions(Array.isArray(aiRes.data) ? aiRes.data : []);
+        } catch {
+          setSuggestions([]);
+        }
+      }
       
     } catch (err) {
       console.error('Checkout failed', err);
@@ -249,50 +279,75 @@ const CustomerPortal = () => {
       </div>
       
       {/* AI Maintenance Insights */}
-      {suggestions.length > 0 && (
-        <div className="glass-card mb-10" style={{ 
+      <div className="glass-card mb-10" style={{ 
           background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%)',
           border: '1px solid rgba(99, 102, 241, 0.2)',
           padding: '1.5rem'
         }}>
-          <div className="flex items-center gap-3 mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
+            <div className="flex items-center gap-3">
             <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-400">
               <Sparkles size={20} />
             </div>
             <div>
               <h2 className="text-lg font-bold text-white">AI Maintenance Insights</h2>
-              <p className="text-xs text-indigo-400 font-medium">Predictive analysis based on your vehicle mileage</p>
+              <p className="text-xs text-indigo-400 font-medium">Predictive analysis based on mileage and parts fitted to your selected vehicle</p>
             </div>
+            </div>
+            {myVehicles.length > 0 && (
+              <label className="flex flex-col gap-1 text-xs text-gray-500 min-w-[220px]">
+                <span className="uppercase font-bold tracking-wider">Vehicle</span>
+                <select
+                  value={selectedVehicleId ?? ''}
+                  onChange={(e) => setSelectedVehicleId(Number(e.target.value))}
+                  className="bg-[#0a0a0c] border border-white/15 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-indigo-500"
+                >
+                  {myVehicles.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.brand} {v.model} · {v.vehicleNumber}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
           </div>
 
+          {myVehicles.length === 0 ? (
+            <p className="text-sm text-gray-400 flex items-center gap-2">
+              <Car size={18} className="text-indigo-400 shrink-0" />
+              Add a vehicle under <strong className="text-white">My Vehicles</strong> to unlock personalized maintenance predictions for your garage.
+            </p>
+          ) : suggestions.length === 0 ? (
+            <p className="text-sm text-gray-400">No maintenance alerts for this vehicle right now. Keep mileage updated after service for better accuracy.</p>
+          ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {suggestions.map((s, idx) => (
+            {suggestions.map((sug: any, idx: number) => (
               <div key={idx} className="p-4 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
                 <div className="flex justify-between items-start mb-3">
-                  <h3 className="font-semibold text-white">{s.partName}</h3>
+                  <h3 className="font-semibold text-white">{sug.partName}</h3>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                    s.urgency === 'Critical' ? 'bg-red-500/20 text-red-400' : 
-                    s.urgency === 'High' ? 'bg-orange-500/20 text-orange-400' : 
+                    sug.urgency === 'Critical' ? 'bg-red-500/20 text-red-400' : 
+                    sug.urgency === 'High' ? 'bg-orange-500/20 text-orange-400' : 
                     'bg-indigo-500/20 text-indigo-400'
                   }`}>
-                    {s.urgency}
+                    {sug.urgency}
                   </span>
                 </div>
-                <p className="text-sm text-gray-400 leading-relaxed mb-4">{s.reason}</p>
+                <p className="text-sm text-gray-400 leading-relaxed mb-4">{sug.reason}</p>
                 <div className="flex items-center justify-between mt-auto pt-3 border-t border-white/5">
                   <div className="flex items-center gap-2 text-xs text-gray-500">
                     <Clock size={12} />
-                    <span>~{s.estimatedRemainingKm}km remaining</span>
+                    <span>~{sug.estimatedRemainingKm}km remaining</span>
                   </div>
-                  <button className="text-xs text-indigo-400 font-bold hover:text-indigo-300 transition-colors">
+                  <button type="button" className="text-xs text-indigo-400 font-bold hover:text-indigo-300 transition-colors">
                     Find Replacement →
                   </button>
                 </div>
               </div>
             ))}
           </div>
+          )}
         </div>
-      )}
 
       <div className="tab-content">
         {activeTab === 'catalog' && (

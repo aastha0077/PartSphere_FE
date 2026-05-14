@@ -9,7 +9,8 @@ import {
   ArrowRight,
   Settings,
   Truck,
-  CheckCircle2
+  CheckCircle2,
+  Wrench
 } from 'lucide-react';
 
 const Home = () => {
@@ -129,6 +130,36 @@ const Home = () => {
           background: 'radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, transparent 70%)',
           zIndex: 1
         }}></div>
+      </section>
+
+      <section style={{ padding: '80px 2rem', background: 'rgba(99, 102, 241, 0.04)', borderTop: '1px solid var(--glass-border)', borderBottom: '1px solid var(--glass-border)' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '16px', background: 'rgba(99, 102, 241, 0.15)', marginBottom: '1.5rem' }}>
+            <Wrench size={28} className="text-indigo-400" />
+          </div>
+          <h2 style={{ fontSize: '2rem', marginBottom: '1rem', fontWeight: 800 }}>PartSphere Vehicle Service Center</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', lineHeight: 1.7, marginBottom: '1.5rem' }}>
+            Our workshop combines certified technicians with a live parts warehouse so repairs are not delayed waiting on components. Customers can book service online, track history, request hard-to-find parts, and receive maintenance guidance based on mileage and prior work performed here.
+          </p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', lineHeight: 1.6 }}>
+            Create a free customer account to book appointments, manage vehicles, and browse the catalog from anywhere.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate('/signup')}
+            style={{
+              marginTop: '1.75rem',
+              background: 'rgba(99, 102, 241, 0.2)',
+              color: 'white',
+              padding: '12px 28px',
+              borderRadius: 'var(--radius-md)',
+              fontWeight: 700,
+              border: '1px solid rgba(99, 102, 241, 0.35)'
+            }}
+          >
+            Customer sign up
+          </button>
+        </div>
       </section>
 
       {/* Features Section */}

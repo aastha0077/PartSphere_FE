@@ -36,6 +36,7 @@ const CustomerPortal = lazy(() => import('./pages/customer/Portal'));
 const CustomerVehicles = lazy(() => import('./pages/customer/CustomerVehicles'));
 const CustomerBooking = lazy(() => import('./pages/customer/CustomerBooking'));
 const CustomerHistory = lazy(() => import('./pages/customer/CustomerHistory'));
+const CustomerReviews = lazy(() => import('./pages/customer/CustomerReviews'));
 
 const Loading = () => (
   <div className="h-screen flex items-center justify-center bg-[#0a0a0c] text-white">
@@ -92,6 +93,7 @@ function App() {
               <Route path="vehicles" element={<CustomerVehicles />} />
               <Route path="booking" element={<CustomerBooking />} />
               <Route path="history" element={<CustomerHistory />} />
+              <Route path="reviews" element={<CustomerReviews />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />
