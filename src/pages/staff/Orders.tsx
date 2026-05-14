@@ -116,6 +116,7 @@ const Orders = () => {
             <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
         ) : (
+          <>
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-white/[0.02] border-b border-white/5">
@@ -137,7 +138,7 @@ const Orders = () => {
                   </td>
                 </tr>
               ) : (
-                filteredOrders.map((order) => (
+                pagedOrders.map((order) => (
                   <tr key={order.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
                     <td className="p-4 font-mono text-sm text-white">#{order.id}</td>
                     <td className="p-4 text-gray-300">
@@ -185,6 +186,17 @@ const Orders = () => {
               )}
             </tbody>
           </table>
+          {!loading && filteredOrders.length > 0 && (
+            <TablePagination
+              page={page}
+              pageSize={pageSize}
+              total={filteredOrders.length}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              itemLabel="orders"
+            />
+          )}
+          </>
         )}
       </div>
     </div>

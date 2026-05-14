@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShoppingCart,
@@ -18,6 +18,7 @@ import type { VehiclePart } from '../../types';
 import { toast } from 'sonner';
 import api from '../../services/api';
 import Modal from '../../components/common/Modal';
+import TablePagination from '../../components/common/TablePagination';
 
 const Purchases = () => {
   const [purchases, setPurchases] = useState<PurchaseInvoice[]>([]);
@@ -26,6 +27,8 @@ const Purchases = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const [vendorId, setVendorId] = useState<number | ''>('');
   const [notes, setNotes] = useState('');
@@ -53,6 +56,10 @@ const Purchases = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   const handleOpenModal = () => {
     setVendorId('');
@@ -113,10 +120,26 @@ const Purchases = () => {
     }
   };
 
-  const filteredPurchases = purchases.filter(p =>
-    p.vendorName.toLowerCase().includes(search.toLowerCase()) ||
-    p.id.toString().includes(search)
+  const filteredPurchases = useMemo(
+    () =>
+      purchases.filter(
+        (p) =>
+          p.vendorName.toLowerCase().includes(search.toLowerCase()) ||
+          p.id.toString().includes(search)
+      ),
+    [purchases, search]
   );
+
+  const totalPages = Math.max(1, Math.ceil(filteredPurchases.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pagedPurchases = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return filteredPurchases.slice(start, start + pageSize);
+  }, [filteredPurchases, safePage, pageSize]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   return (
     <div className="space-y-6">
@@ -167,18 +190,18 @@ const Purchases = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="p-12 text-center text-gray-500">
+                  <td colSpan={6} className="p-12 text-center text-gray-500">
                     <RefreshCw className="animate-spin mx-auto mb-4" size={24} />
                     Loading purchases...
                   </td>
                 </tr>
               ) : filteredPurchases.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-12 text-center text-gray-500 italic">
+                  <td colSpan={6} className="p-12 text-center text-gray-500 italic">
                     No purchase invoices found.
                   </td>
                 </tr>
-              ) : filteredPurchases.map((purchase) => (
+              ) : pagedPurchases.map((purchase) => (
                 <tr key={purchase.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
                   <td className="p-4">
                     <div className="flex items-center gap-2 text-emerald-400 font-mono font-bold">
@@ -211,6 +234,16 @@ const Purchases = () => {
             </tbody>
           </table>
         </div>
+        {!loading && filteredPurchases.length > 0 && (
+          <TablePagination
+            page={page}
+            pageSize={pageSize}
+            total={filteredPurchases.length}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            itemLabel="invoices"
+          />
+        )}
       </div>
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Record New Purchase">
