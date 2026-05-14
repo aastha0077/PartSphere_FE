@@ -433,7 +433,17 @@ const CustomerPortal = () => {
                 </tr>
               </thead>
               <tbody>
-                {((history as any)?.purchases || []).length === 0 ? <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center' }}>No orders found yet.</td></tr> : ((history as any)?.purchases || []).map((order: any) => (
+                {(() => {
+                  const rows = [...((history as any)?.purchases || [])].sort(
+                    (a: any, b: any) =>
+                      new Date(b.date).getTime() - new Date(a.date).getTime() || (b.id ?? 0) - (a.id ?? 0)
+                  );
+                  return rows.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} style={{ padding: '2rem', textAlign: 'center' }}>No orders found yet.</td>
+                    </tr>
+                  ) : (
+                    rows.map((order: any) => (
                   <tr key={order.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
                     <td style={{ padding: '1rem' }}>#{order.id}</td>
                     <td style={{ padding: '1rem' }}>{new Date(order.date).toLocaleDateString()}</td>
@@ -441,7 +451,9 @@ const CustomerPortal = () => {
                     <td style={{ padding: '1rem', fontWeight: '600' }}>Rs. {order.totalAmount.toLocaleString()}</td>
                     <td style={{ padding: '1rem' }}><span style={{ color: 'var(--success)' }}>Completed</span></td>
                   </tr>
-                ))}
+                    ))
+                  );
+                })()}
               </tbody>
             </table>
           </div>

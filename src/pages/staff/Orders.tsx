@@ -16,7 +16,12 @@ const Orders = () => {
     try {
       setLoading(true);
       const res = await api.get('/orders');
-      setOrders(res.data);
+      const list = Array.isArray(res.data) ? res.data : [];
+      list.sort(
+        (a: any, b: any) =>
+          new Date(b.date).getTime() - new Date(a.date).getTime() || (b.id ?? 0) - (a.id ?? 0)
+      );
+      setOrders(list);
     } catch (err) {
       toast.error('Failed to load orders data');
       console.error(err);
@@ -46,11 +51,17 @@ const Orders = () => {
     }
   };
 
-  const filteredOrders = orders.filter(s =>
-    s.id.toString().includes(searchQuery) ||
-    s.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.staffName?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredOrders = orders
+    .filter(
+      (s) =>
+        s.id.toString().includes(searchQuery) ||
+        s.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.staffName?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort(
+      (a, b) =>
+        new Date(b.date).getTime() - new Date(a.date).getTime() || (b.id ?? 0) - (a.id ?? 0)
+    );
 
   return (
     <div className="animate-fade-in">
