@@ -6,8 +6,8 @@ import {
   Car, 
   Calendar, 
   History,
-  Search,
-  Bell
+  Bell,
+  MessageSquareText
 } from 'lucide-react';
 import UserMenu from '../components/common/UserMenu';
 
@@ -19,6 +19,7 @@ const CustomerLayout = () => {
     { to: '/customer/vehicles', icon: <Car size={18} />, label: 'My Vehicles' },
     { to: '/customer/booking', icon: <Calendar size={18} />, label: 'Book Service' },
     { to: '/customer/history', icon: <History size={18} />, label: 'History' },
+    { to: '/customer/reviews', icon: <MessageSquareText size={18} />, label: 'Reviews' },
   ];
 
   return (
