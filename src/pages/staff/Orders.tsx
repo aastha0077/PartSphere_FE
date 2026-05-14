@@ -1,12 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ShoppingCart, Search, Eye, Download, Calendar, Filter, Mail, CheckCircle } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from 'sonner';
+import TablePagination from '../../components/common/TablePagination';
 
 const Orders = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
 
   useEffect(() => {
     fetchOrders();
@@ -51,17 +58,32 @@ const Orders = () => {
     }
   };
 
-  const filteredOrders = orders
-    .filter(
-      (s) =>
-        s.id.toString().includes(searchQuery) ||
-        s.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.staffName?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    .sort(
-      (a, b) =>
-        new Date(b.date).getTime() - new Date(a.date).getTime() || (b.id ?? 0) - (a.id ?? 0)
-    );
+  const filteredOrders = useMemo(
+    () =>
+      orders
+        .filter(
+          (s) =>
+            s.id.toString().includes(searchQuery) ||
+            s.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            s.staffName?.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        .sort(
+          (a, b) =>
+            new Date(b.date).getTime() - new Date(a.date).getTime() || (b.id ?? 0) - (a.id ?? 0)
+        ),
+    [orders, searchQuery]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pagedOrders = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return filteredOrders.slice(start, start + pageSize);
+  }, [filteredOrders, safePage, pageSize]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   return (
     <div className="animate-fade-in">
