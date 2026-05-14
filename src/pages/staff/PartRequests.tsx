@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Search, AlertTriangle, CheckCircle, Clock, MoreVertical, MessageSquare } from 'lucide-react';
 import api from '../../services/api';
