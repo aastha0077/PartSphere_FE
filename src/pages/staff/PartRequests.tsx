@@ -4,12 +4,15 @@ import { Search, AlertTriangle, CheckCircle, Clock, MoreVertical, MessageSquare 
 import api from '../../services/api';
 import { toast } from 'sonner';
 import Modal from '../../components/common/Modal';
+import TablePagination from '../../components/common/TablePagination';
 
 const PartRequests = () => {
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [updateData, setUpdateData] = useState({ status: '', notes: '' });
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const fetchRequests = async () => {
     try {
@@ -23,6 +26,22 @@ const PartRequests = () => {
   };
 
   useEffect(() => { fetchRequests(); }, []);
+
+  const sortedRequests = useMemo(
+    () => [...requests].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+    [requests]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(sortedRequests.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pagedRequests = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return sortedRequests.slice(start, start + pageSize);
+  }, [sortedRequests, safePage, pageSize]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +84,7 @@ const PartRequests = () => {
               <tr><td colSpan={5} style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading requests...</td></tr>
             ) : requests.length === 0 ? (
               <tr><td colSpan={5} style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>No pending requests.</td></tr>
-            ) : requests.map(req => (
+            ) : pagedRequests.map(req => (
               <tr key={req.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }} className="table-row-hover">
                 <td style={{ padding: '1.25rem 1.5rem' }}>
                   <div style={{ fontWeight: '700' }}>{req.customerName}</div>
@@ -103,6 +122,16 @@ const PartRequests = () => {
             ))}
           </tbody>
         </table>
+        {!loading && sortedRequests.length > 0 && (
+          <TablePagination
+            page={page}
+            pageSize={pageSize}
+            total={sortedRequests.length}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            itemLabel="requests"
+          />
+        )}
       </div>
 
       <Modal isOpen={!!selectedRequest} onClose={() => setSelectedRequest(null)} title="Manage Part Request">

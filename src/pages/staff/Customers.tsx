@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { 
   Users, 
   UserPlus, 
@@ -22,6 +22,7 @@ import api from '../../services/api';
 import type { Customer } from '../../types';
 import Modal from '../../components/common/Modal';
 import { toast } from 'sonner';
+import TablePagination from '../../components/common/TablePagination';
 
 interface CustomerHistory {
   customer: Customer;
@@ -36,6 +37,8 @@ const Customers = () => {
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(9);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedHistory, setSelectedHistory] = useState<CustomerHistory | null>(null);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
@@ -66,6 +69,21 @@ const Customers = () => {
     }, 400);
     return () => clearTimeout(timer);
   }, [searchQuery, fetchCustomers]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(customers.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pagedCustomers = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return customers.slice(start, start + pageSize);
+  }, [customers, safePage, pageSize]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   const fetchHistory = async (id: number) => {
     setIsHistoryLoading(true);
@@ -155,7 +173,11 @@ const Customers = () => {
            Array.from({ length: 3 }).map((_, i) => (
              <div key={i} className="glass-card animate-pulse" style={{ height: '220px' }} />
            ))
-        ) : customers.map(customer => (
+        ) : customers.length === 0 ? (
+           <div className="glass-card col-span-full text-center py-16 text-gray-500">
+             No customer profiles match your query parameters.
+           </div>
+        ) : pagedCustomers.map(customer => (
           <motion.div 
             key={customer.id} 
             layout
@@ -209,6 +231,20 @@ const Customers = () => {
           </motion.div>
         ))}
       </div>
+
+      {!loading && customers.length > 0 && (
+        <div className="glass-card" style={{ padding: 0, overflow: 'hidden', marginTop: '1.5rem' }}>
+          <TablePagination
+            page={page}
+            pageSize={pageSize}
+            total={customers.length}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            pageSizeOptions={[6, 9, 12, 24]}
+            itemLabel="customers"
+          />
+        </div>
+      )}
 
       {/* Customer Detail Modal */}
       <Modal 

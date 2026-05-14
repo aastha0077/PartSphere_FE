@@ -1,11 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { CreditCard, AlertCircle, CheckCircle, Send, DollarSign } from 'lucide-react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { CheckCircle, Send, DollarSign } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from 'sonner';
+import TablePagination from '../../components/common/TablePagination';
 
 const Credits = () => {
   const [credits, setCredits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(6);
 
   const fetchCredits = async () => {
     try {
@@ -19,6 +22,25 @@ const Credits = () => {
   };
 
   useEffect(() => { fetchCredits(); }, []);
+
+  const sortedCredits = useMemo(
+    () =>
+      [...credits].sort(
+        (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+      ),
+    [credits]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(sortedCredits.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pagedCredits = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return sortedCredits.slice(start, start + pageSize);
+  }, [sortedCredits, safePage, pageSize]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   const markAsPaid = async (id: number) => {
     try {
@@ -37,7 +59,12 @@ const Credits = () => {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
-        {loading ? <p>Loading credits...</p> : credits.map(credit => (
+        {loading ? (
+          <p className="text-gray-500 col-span-full">Loading credits...</p>
+        ) : sortedCredits.length === 0 ? (
+          <p className="text-gray-500 col-span-full text-center py-12">No outstanding credits in the ledger.</p>
+        ) : (
+          pagedCredits.map((credit) => (
           <div key={credit.id} className="glass-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -77,8 +104,20 @@ const Credits = () => {
               </button>
             </div>
           </div>
-        ))}
+          ))
+        )}
       </div>
+      {!loading && sortedCredits.length > 0 && (
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          total={sortedCredits.length}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          pageSizeOptions={[6, 12, 24, 48]}
+          itemLabel="credits"
+        />
+      )}
     </div>
   );
 };

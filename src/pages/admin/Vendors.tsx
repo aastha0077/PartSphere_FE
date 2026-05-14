@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Truck, 
@@ -18,6 +18,7 @@ import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
 import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
+import TablePagination from '../../components/common/TablePagination';
 
 const Vendors = () => {
   const { user } = useAuth();
@@ -28,6 +29,8 @@ const Vendors = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(9);
   const [formData, setFormData] = useState({
     name: '',
     contactPerson: '',
@@ -57,6 +60,32 @@ const Vendors = () => {
   useEffect(() => { 
     fetchVendors(); 
   }, []);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
+
+  const filteredVendors = useMemo(
+    () =>
+      vendors.filter(
+        (v) =>
+          v.name.toLowerCase().includes(search.toLowerCase()) ||
+          v.contactPerson.toLowerCase().includes(search.toLowerCase()) ||
+          v.contact.toLowerCase().includes(search.toLowerCase())
+      ),
+    [vendors, search]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredVendors.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pagedVendors = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return filteredVendors.slice(start, start + pageSize);
+  }, [filteredVendors, safePage, pageSize]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   const handleOpenModal = (vendor: Vendor | null = null) => {
     if (!isAdmin) return;
@@ -112,12 +141,6 @@ const Vendors = () => {
     }
   };
 
-  const filteredVendors = vendors.filter(v => 
-    v.name.toLowerCase().includes(search.toLowerCase()) || 
-    v.contactPerson.toLowerCase().includes(search.toLowerCase()) ||
-    v.contact.toLowerCase().includes(search.toLowerCase())
-  );
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -164,7 +187,7 @@ const Vendors = () => {
             <div className="col-span-full py-12 text-center text-gray-500 italic">
               No vendors found matching your criteria.
             </div>
-          ) : filteredVendors.map((vendor, idx) => (
+          ) : pagedVendors.map((vendor, idx) => (
             <motion.div 
               key={vendor.id} 
               initial={{ opacity: 0, y: 20 }}
@@ -229,6 +252,17 @@ const Vendors = () => {
           ))}
         </AnimatePresence>
       </div>
+      {!loading && filteredVendors.length > 0 && (
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          total={filteredVendors.length}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          pageSizeOptions={[6, 9, 12, 24]}
+          itemLabel="vendors"
+        />
+      )}
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingVendor ? 'Edit Vendor Details' : 'Register New Vendor'}>
         <form onSubmit={handleSubmit} className="space-y-4">
