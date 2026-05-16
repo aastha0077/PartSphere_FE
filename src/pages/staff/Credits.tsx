@@ -2,20 +2,33 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { CheckCircle, Send, DollarSign } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from 'sonner';
+import { toastApiError } from '../../utils/feedback';
 import TablePagination from '../../components/common/TablePagination';
 
+interface CreditRecord {
+  id: number;
+  customerName: string;
+  salesInvoiceId: number;
+  dueAmount: number;
+  dueDate: string;
+  status: string;
+}
+
 const Credits = () => {
-  const [credits, setCredits] = useState<any[]>([]);
+  const [credits, setCredits] = useState<CreditRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
 
   const fetchCredits = async () => {
     try {
-      const res = await api.get('/admin/reports/customers'); // Using the report endpoint which includes pending credits
-      setCredits(res.data.pendingCredits);
-    } catch (err) {
-      console.error('Failed to fetch credits');
+      const res = await api.get('/admin/credits');
+      const pending = (res.data as CreditRecord[]).filter(
+        (c) => c.status !== 'Paid'
+      );
+      setCredits(pending);
+    } catch (err: unknown) {
+      toastApiError(err, { context: 'load', fallback: 'Could not load credit payments.' });
     } finally {
       setLoading(false);
     }
@@ -45,9 +58,20 @@ const Credits = () => {
   const markAsPaid = async (id: number) => {
     try {
       await api.put(`/admin/credits/${id}/paid`);
+      toast.success('Payment recorded');
       fetchCredits();
     } catch (err) {
-      toast.error('Payment failed');
+      toastApiError(err, { context: 'save', fallback: 'Could not record payment.' });
+    }
+  };
+
+  const sendReminder = async (id: number) => {
+    try {
+      const toastId = toast.loading('Sending reminder...');
+      await api.post(`/admin/credits/${id}/remind`);
+      toast.success('Reminder emailed to customer', { id: toastId });
+    } catch (err) {
+      toastApiError(err, { context: 'save', fallback: 'Could not send reminder. Customer may not have an email on file.' });
     }
   };
 
@@ -99,7 +123,11 @@ const Credits = () => {
               >
                 <CheckCircle size={18} /> Mark Paid
               </button>
-              <button style={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', color: 'var(--text-primary)' }}>
+              <button
+                onClick={() => sendReminder(credit.id)}
+                title="Send payment reminder email"
+                style={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', color: 'var(--text-primary)' }}
+              >
                 <Send size={18} />
               </button>
             </div>

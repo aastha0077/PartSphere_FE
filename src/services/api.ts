@@ -20,9 +20,17 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const status = error.response?.status;
+    const url = String(error.config?.url ?? '');
+    const isAuthAttempt = /\/auth\/(login|register)(\?|$)/i.test(url);
+
+    // Do not redirect on failed login/register — let the form show the error.
+    if (status === 401 && !isAuthAttempt) {
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      const onLoginPage = window.location.pathname === '/login';
+      if (!onLoginPage) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

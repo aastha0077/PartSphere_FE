@@ -11,7 +11,9 @@ import {
   Package
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import api from '../../services/api';
+import { toastApiError, toastValidationError } from '../../utils/feedback';
 import type { VehiclePart, Customer } from '../../types';
 
 interface CartItem extends VehiclePart {
@@ -78,7 +80,14 @@ const POS = () => {
   const total = subtotal - discount;
 
   const handleCheckout = async (paymentStatus: string) => {
-    if (cart.length === 0 || !selectedCustomer) return;
+    if (cart.length === 0) {
+      toastValidationError('Add at least one part to the cart before checking out.');
+      return;
+    }
+    if (!selectedCustomer) {
+      toastValidationError('Select a customer before completing the sale.');
+      return;
+    }
 
     try {
       await api.post('/orders', {
@@ -96,8 +105,11 @@ const POS = () => {
       
       const partsRes = await api.get('/parts?pageSize=1000');
       setParts(partsRes.data.items || []);
-    } catch (err) {
-      toast.error('Checkout failed. Please check stock levels.');
+    } catch (err: unknown) {
+      toastApiError(err, {
+        context: 'checkout',
+        fallback: 'Checkout failed. The customer may have insufficient stock for one or more items.',
+      });
     }
   };
 

@@ -20,6 +20,7 @@ import api from '../../services/api';
 import type { Customer } from '../../types';
 import Modal from '../../components/common/Modal';
 import { toast } from 'sonner';
+import { toastApiError, toastValidationError } from '../../utils/feedback';
 import TablePagination from '../../components/common/TablePagination';
 
 interface CustomerHistory {
@@ -52,7 +53,7 @@ const AdminCustomers = () => {
     try {
       const res = await api.get('/admin/customers');
       setCustomers(res.data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to fetch customers');
     } finally {
       setLoading(false);
@@ -101,7 +102,7 @@ const AdminCustomers = () => {
       setFormData({ name: '', phone: '', email: '', address: '' });
       fetchCustomers();
     } catch (err) {
-      toast.error('Error saving customer data');
+      toastApiError(err, { context: 'save', fallback: 'Could not save customer details.' });
     }
   };
 
@@ -111,7 +112,7 @@ const AdminCustomers = () => {
       const res = await api.get(`/staff/customers/${id}/history`);
       setSelectedHistory(res.data);
     } catch (err) {
-      toast.error('Failed to retrieve customer archives');
+      toastApiError(err, { context: 'load', fallback: 'Could not load purchase history for this customer.' });
     } finally {
       setIsHistoryLoading(false);
     }
@@ -122,7 +123,7 @@ const AdminCustomers = () => {
       await api.post(`/orders/${id}/email`);
       toast.success('Invoice dispatched to customer email');
     } catch (err) {
-      toast.error('Dispatch failed');
+      toastApiError(err, { context: 'save', fallback: 'Could not email the invoice. The customer may not have a valid email.' });
     }
   };
 

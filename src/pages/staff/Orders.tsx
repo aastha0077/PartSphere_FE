@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { ShoppingCart, Search, Eye, Calendar, Filter, Mail, CheckCircle } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from 'sonner';
+import { toastApiError } from '../../utils/feedback';
 import TablePagination from '../../components/common/TablePagination';
 
 const Orders = () => {
@@ -29,8 +30,8 @@ const Orders = () => {
           new Date(b.date).getTime() - new Date(a.date).getTime() || (b.id ?? 0) - (a.id ?? 0)
       );
       setOrders(list);
-    } catch (err) {
-      toast.error('Failed to load orders data');
+    } catch (err: unknown) {
+      toastApiError(err, { context: 'load', fallback: 'Could not load orders. Please refresh the page.' });
       console.error(err);
     } finally {
       setLoading(false);
@@ -42,8 +43,8 @@ const Orders = () => {
       const toastId = toast.loading('Sending invoice email...');
       await api.post(`/orders/${id}/email`);
       toast.success('Invoice emailed successfully to customer!', { id: toastId });
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to send email invoice');
+    } catch (err: unknown) {
+      toastApiError(err, { context: 'save', fallback: 'Could not send the invoice email. Check that the customer has a valid email.' });
     }
   };
 
@@ -53,8 +54,8 @@ const Orders = () => {
       await api.put(`/orders/${id}/complete`);
       toast.success('Order completed successfully!', { id: toastId });
       fetchOrders();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to complete order');
+    } catch (err: unknown) {
+      toastApiError(err, { context: 'save', fallback: 'Could not complete this order. It may already be paid or stock may be insufficient.' });
     }
   };
 

@@ -15,6 +15,7 @@ import {
 import { motion } from 'framer-motion';
 import api from '../../services/api';
 import { toast } from 'sonner';
+import { toastApiError, toastValidationError } from '../../utils/feedback';
 
 const StaffReports = () => {
   const [loading, setLoading] = useState(true);
@@ -29,8 +30,8 @@ const StaffReports = () => {
     try {
       const res = await api.get('/staff/reports/customer-reports');
       setData(res.data);
-    } catch (err) {
-      toast.error('Failed to synchronize market intelligence');
+    } catch (err: unknown) {
+      toastApiError(err, { context: 'load', fallback: 'Could not load reports.' });
     } finally {
       setLoading(false);
     }

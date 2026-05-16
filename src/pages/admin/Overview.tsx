@@ -16,6 +16,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { toast } from 'sonner';
+import { toastApiError, toastValidationError } from '../../utils/feedback';
 
 const DashboardCard = ({ title, value, icon, change, isPositive, delay = 0 }: any) => (
   <motion.div 
@@ -120,7 +121,7 @@ const Overview = () => {
       try {
         const res = await api.get('/admin/reports/financial-summary');
         setStats(res.data);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Failed to fetch dashboard stats');
       } finally {
         setLoading(false);
@@ -199,7 +200,7 @@ const Overview = () => {
                 toast.success("System report exported!");
               } catch (err) {
                 toast.dismiss();
-                toast.error("Failed to generate report");
+                toastApiError(err, { context: 'generic', fallback: 'Could not generate the report.' });
               }
             }}
             style={{ padding: '10px 16px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', color: 'white', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}

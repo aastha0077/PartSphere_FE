@@ -17,6 +17,13 @@ import api from '../../services/api';
 import type { User } from '../../types';
 import Modal from '../../components/common/Modal';
 import { toast } from 'sonner';
+import FormAlert, { FieldError } from '../../components/common/FormAlert';
+import {
+  hasFieldErrors,
+  toastApiError,
+  validateStaffForm,
+  type FieldErrors,
+} from '../../utils/feedback';
 import TablePagination from '../../components/common/TablePagination';
 
 const StaffManagement = () => {
@@ -33,6 +40,8 @@ const StaffManagement = () => {
     role: 'Staff'
   });
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [formError, setFormError] = useState<string | null>(null);
 
   const fetchStaff = async () => {
     try {
@@ -74,6 +83,15 @@ const StaffManagement = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
+    const validation = validateStaffForm(formData, !!editingId);
+    setFieldErrors(validation);
+    if (hasFieldErrors(validation)) {
+      setFormError('Please fix the highlighted fields before saving.');
+      toast.error('Please fix the highlighted fields before saving.');
+      return;
+    }
+
     try {
       if (editingId) {
         await api.put(`/admin/staff/${editingId}`, formData);
@@ -85,9 +103,14 @@ const StaffManagement = () => {
       setIsModalOpen(false);
       setFormData({ name: '', email: '', password: '', role: 'Staff' });
       setEditingId(null);
+      setFieldErrors({});
       fetchStaff();
-    } catch (err) {
-      toast.error('Error saving staff member');
+    } catch (err: unknown) {
+      const msg = toastApiError(err, {
+        context: 'save',
+        fallback: 'Could not save staff member. The email may already be in use.',
+      });
+      setFormError(msg);
     }
   };
 
@@ -107,8 +130,8 @@ const StaffManagement = () => {
       await api.patch(`/admin/staff/${id}/toggle-status`);
       toast.success('Personnel status updated');
       fetchStaff();
-    } catch (err) {
-      toast.error('Failed to update status');
+    } catch (err: unknown) {
+      toastApiError(err, { context: 'save', fallback: 'Could not update staff status.' });
     }
   };
 
@@ -118,8 +141,8 @@ const StaffManagement = () => {
       await api.delete(`/admin/staff/${id}`);
       toast.success('Personnel removed permanently');
       fetchStaff();
-    } catch (err) {
-      toast.error('Failed to delete staff member');
+    } catch (err: unknown) {
+      toastApiError(err, { context: 'delete', fallback: 'Could not delete this staff member.' });
     }
   };
 
@@ -316,17 +339,23 @@ const StaffManagement = () => {
         )}
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingId(null); setFormData({ name: '', email: '', password: '', role: 'Staff' }); }} title={editingId ? "Edit Personnel Details" : "Register System Operator"}>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingId(null); setFormData({ name: '', email: '', password: '', role: 'Staff' }); setFieldErrors({}); setFormError(null); }} title={editingId ? "Edit Personnel Details" : "Register System Operator"}>
+        <form onSubmit={handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {formError && (
+            <FormAlert variant="error" title="Could not save">
+              {formError}
+            </FormAlert>
+          )}
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Full Name</label>
             <input 
               placeholder="e.g. Alexander Pierce" 
               value={formData.name} 
-              onChange={e => setFormData({...formData, name: e.target.value})} 
+              onChange={e => { setFormData({...formData, name: e.target.value}); setFieldErrors((p) => ({ ...p, name: undefined })); }} 
               style={{ width: '100%', padding: '12px', background: 'var(--bg-tertiary)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }} 
-              required 
+              aria-invalid={!!fieldErrors.name}
             />
+            <FieldError message={fieldErrors.name} />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Email Address</label>
@@ -334,10 +363,11 @@ const StaffManagement = () => {
               placeholder="staff@partsphere.com" 
               type="email" 
               value={formData.email} 
-              onChange={e => setFormData({...formData, email: e.target.value})} 
+              onChange={e => { setFormData({...formData, email: e.target.value}); setFieldErrors((p) => ({ ...p, email: undefined })); }} 
               style={{ width: '100%', padding: '12px', background: 'var(--bg-tertiary)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }} 
-              required 
+              aria-invalid={!!fieldErrors.email}
             />
+            <FieldError message={fieldErrors.email} />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
@@ -349,11 +379,12 @@ const StaffManagement = () => {
                 placeholder={editingId ? "New password" : "Initial access password"} 
                 type="password" 
                 value={formData.password} 
-                onChange={e => setFormData({...formData, password: e.target.value})} 
+                onChange={e => { setFormData({...formData, password: e.target.value}); setFieldErrors((p) => ({ ...p, password: undefined })); }} 
                 style={{ width: '100%', padding: '12px 12px 12px 40px', background: 'var(--bg-tertiary)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }} 
-                required={!editingId} 
+                aria-invalid={!!fieldErrors.password}
               />
             </div>
+            <FieldError message={fieldErrors.password} />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Authorization Level</label>

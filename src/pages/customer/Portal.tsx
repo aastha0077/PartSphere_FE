@@ -4,6 +4,7 @@ import api from '../../services/api';
 import type { VehiclePart } from '../../types';
 import Modal from '../../components/common/Modal';
 import { toast } from 'sonner';
+import { toastApiError, toastValidationError } from '../../utils/feedback';
 
 const CustomerPortal = () => {
   const [parts, setParts] = useState<VehiclePart[]>([]);
@@ -86,7 +87,7 @@ const CustomerPortal = () => {
         setSuggestions([]);
       }
 
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to fetch portal data', err);
       // toast.error('Some data could not be loaded');
     }
@@ -116,7 +117,7 @@ const CustomerPortal = () => {
       const res = await api.get('/customer/appointments');
       setAppointments(res.data);
     } catch (err) {
-      toast.error('Booking failed');
+      toastApiError(err, { context: 'booking', fallback: 'Could not book the appointment.' });
     }
   };
 
@@ -130,7 +131,7 @@ const CustomerPortal = () => {
       const res = await api.get('/customer/part-requests');
       setRequests(res.data);
     } catch (err) {
-      toast.error('Failed to submit request');
+      toastApiError(err, { context: 'save', fallback: 'Could not submit your part request.' });
     }
   };
 
@@ -140,8 +141,12 @@ const CustomerPortal = () => {
       return;
     }
     if (checkoutStep === 'delivery') {
-      if (!checkoutInfo.address || !checkoutInfo.phone) {
-        toast.error('Please fill in your delivery details');
+      if (!checkoutInfo.address?.trim()) {
+        toastValidationError('Enter your full delivery address before placing the order.');
+        return;
+      }
+      if (!checkoutInfo.phone?.trim()) {
+        toastValidationError('Enter a contact phone number for delivery.');
         return;
       }
       setCheckoutStep('payment');
@@ -156,7 +161,7 @@ const CustomerPortal = () => {
     
     if (checkoutStep === 'card-details') {
       if (!checkoutInfo.cardNumber || !checkoutInfo.cardExpiry || !checkoutInfo.cardCVC) {
-        toast.error('Please fill in card details');
+        toastValidationError('Enter all card details (number, expiry, and CVV) to continue.');
         return;
       }
     }
@@ -206,7 +211,7 @@ const CustomerPortal = () => {
       
     } catch (err) {
       console.error('Checkout failed', err);
-      toast.error('Checkout failed. Please try again.');
+      toastApiError(err, { context: 'checkout', fallback: 'Checkout failed. Some items may be out of stock.' });
       setCheckoutStep('payment');
     }
   };

@@ -4,6 +4,7 @@ import api from '../../services/api';
 import Modal from '../../components/common/Modal';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { toastApiError, toastValidationError } from '../../utils/feedback';
 
 const CustomerVehicles = () => {
   const [vehicles, setVehicles] = useState<any[]>([]);
@@ -21,7 +22,7 @@ const CustomerVehicles = () => {
     try {
       const res = await api.get('/vehicle/my-vehicles');
       setVehicles(res.data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to fetch vehicles', err);
     } finally {
       setLoading(false);
@@ -38,7 +39,7 @@ const CustomerVehicles = () => {
       setIsModalOpen(false);
       fetchVehicles();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error registering vehicle');
+      toastApiError(err, { context: 'save', fallback: 'Could not add vehicle. The plate number may already be registered.' });
     }
   };
 

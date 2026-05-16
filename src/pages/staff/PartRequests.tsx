@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Search, AlertTriangle, CheckCircle, Clock, MoreVertical, MessageSquare } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from 'sonner';
+import { toastApiError, toastValidationError } from '../../utils/feedback';
 import Modal from '../../components/common/Modal';
 import TablePagination from '../../components/common/TablePagination';
 
@@ -18,8 +19,8 @@ const PartRequests = () => {
     try {
       const res = await api.get('/staff/part-requests');
       setRequests(res.data);
-    } catch (err) {
-      toast.error('Failed to fetch part requests');
+    } catch (err: unknown) {
+      toastApiError(err, { context: 'load', fallback: 'Could not load part requests.' });
     } finally {
       setLoading(false);
     }
@@ -51,7 +52,7 @@ const PartRequests = () => {
       setSelectedRequest(null);
       fetchRequests();
     } catch (err) {
-      toast.error('Update failed');
+      toastApiError(err, { context: 'save', fallback: 'Could not update this request.' });
     }
   };
 

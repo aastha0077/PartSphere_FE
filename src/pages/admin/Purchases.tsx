@@ -16,6 +16,7 @@ import type { Vendor } from '../../services/vendorService';
 import { vendorService } from '../../services/vendorService';
 import type { VehiclePart } from '../../types';
 import { toast } from 'sonner';
+import { toastApiError, toastValidationError } from '../../utils/feedback';
 import api from '../../services/api';
 import Modal from '../../components/common/Modal';
 import TablePagination from '../../components/common/TablePagination';
@@ -46,8 +47,8 @@ const Purchases = () => {
       setPurchases(purchasesData);
       setVendors(vendorsData);
       setParts(partsData.data.items || partsData.data);
-    } catch (err) {
-      toast.error('Failed to load purchase data');
+    } catch (err: unknown) {
+      toastApiError(err, { context: 'load', fallback: 'Could not load purchases. Please refresh.' });
     } finally {
       setLoading(false);
     }
@@ -95,10 +96,10 @@ const Purchases = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!vendorId) return toast.error('Please select a vendor');
+    if (!vendorId) return toastValidationError('Select a vendor before creating a purchase.');
 
     const validItems = purchaseItems.filter(item => item.partId !== '' && item.quantity > 0 && item.unitCost > 0);
-    if (validItems.length === 0) return toast.error('Please add at least one valid item');
+    if (validItems.length === 0) return toastValidationError('Add at least one line item with a part and quantity.');
 
     const formattedItems = validItems.map(item => ({
       vehiclePartId: Number(item.partId),
@@ -116,7 +117,7 @@ const Purchases = () => {
       setIsModalOpen(false);
       fetchData();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error creating purchase invoice');
+      toastApiError(err, { context: 'save', fallback: 'Could not create the purchase invoice.' });
     }
   };
 

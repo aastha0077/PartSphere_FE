@@ -16,6 +16,7 @@ import { vendorService } from '../../services/vendorService';
 import type { Vendor } from '../../services/vendorService';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
+import { toastApiError, toastValidationError } from '../../utils/feedback';
 import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import TablePagination from '../../components/common/TablePagination';
@@ -51,7 +52,7 @@ const Vendors = () => {
       const data = await vendorService.getAll();
       setVendors(data);
     } catch (err: any) {
-      toast.error('Failed to load vendors');
+      toastApiError(err, { context: 'load', fallback: 'Could not load vendors.' });
     } finally {
       setLoading(false);
     }
@@ -121,7 +122,7 @@ const Vendors = () => {
       setIsModalOpen(false);
       fetchVendors();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error saving vendor');
+      toastApiError(err, { context: 'save', fallback: 'Could not save vendor details.' });
     }
   };
 
@@ -137,7 +138,7 @@ const Vendors = () => {
       toast.success('Vendor removed successfully');
       fetchVendors();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to delete vendor. They may have active parts or purchases.');
+      toastApiError(err, { context: 'delete', fallback: 'Could not delete vendor. They may still have linked parts or purchases.' });
     }
   };
 

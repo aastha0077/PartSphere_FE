@@ -14,6 +14,7 @@ import {
 import api from '../../services/api';
 import ModernCalendar from '../../components/common/ModernCalendar';
 import { toast } from 'sonner';
+import { toastApiError, toastValidationError } from '../../utils/feedback';
 
 const Appointments = () => {
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -24,7 +25,7 @@ const Appointments = () => {
     try {
       const res = await api.get('/staff/appointments');
       setAppointments(res.data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to fetch appointments');
     } finally {
       setLoading(false);
@@ -39,7 +40,7 @@ const Appointments = () => {
       toast.success(`Appointment marked as ${status}`);
       fetchAppointments();
     } catch (err) {
-      toast.error('Failed to update status');
+      toastApiError(err, { context: 'save', fallback: 'Could not update appointment status.' });
     }
   };
 

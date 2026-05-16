@@ -6,6 +6,7 @@ import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { toastApiError, toastValidationError } from '../../utils/feedback';
 
 const Vehicles = () => {
   const [vehicles, setVehicles] = useState<any[]>([]);
@@ -33,7 +34,7 @@ const Vehicles = () => {
       const url = query ? `/staff/vehicles/search?query=${query}` : '/staff/vehicles';
       const res = await api.get(url);
       setVehicles(res.data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to fetch vehicles');
     } finally {
       setLoading(false);
@@ -69,7 +70,7 @@ const Vehicles = () => {
       setIsModalOpen(false);
       fetchVehicles();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error registering vehicle. Number might already exist.');
+      toastApiError(err, { context: 'save', fallback: 'Could not register vehicle. The plate number may already exist.' });
     }
   };
 
@@ -84,7 +85,7 @@ const Vehicles = () => {
       toast.success('Vehicle removed from registry');
       fetchVehicles();
     } catch (err) {
-      toast.error('Failed to delete vehicle.');
+      toastApiError(err, { context: 'delete', fallback: 'Could not delete this vehicle.' });
     }
   };
 

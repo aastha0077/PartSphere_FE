@@ -22,6 +22,7 @@ import api from '../../services/api';
 import type { Customer } from '../../types';
 import Modal from '../../components/common/Modal';
 import { toast } from 'sonner';
+import { toastApiError, toastValidationError } from '../../utils/feedback';
 import TablePagination from '../../components/common/TablePagination';
 
 interface CustomerHistory {
@@ -40,14 +41,20 @@ const Customers = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(9);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [selectedHistory, setSelectedHistory] = useState<CustomerHistory | null>(null);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [includeVehicle, setIncludeVehicle] = useState(true);
   
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    address: ''
+    address: '',
+    vehicleNumber: '',
+    brand: '',
+    model: '',
+    mileage: 0
   });
 
   const fetchCustomers = useCallback(async (query = '') => {
@@ -56,8 +63,8 @@ const Customers = () => {
       const endpoint = query ? `/staff/customers/search?query=${encodeURIComponent(query)}` : '/staff/customers';
       const res = await api.get(endpoint);
       setCustomers(res.data);
-    } catch (err) {
-      toast.error('Failed to synchronize customer database');
+    } catch (err: unknown) {
+      toastApiError(err, { context: 'load', fallback: 'Could not load customers.' });
     } finally {
       setLoading(false);
     }
@@ -91,22 +98,68 @@ const Customers = () => {
       const res = await api.get(`/staff/customers/${id}/history`);
       setSelectedHistory(res.data);
     } catch (err) {
-      toast.error('Failed to retrieve customer archives');
+      toastApiError(err, { context: 'load', fallback: 'Could not load purchase history for this customer.' });
     } finally {
       setIsHistoryLoading(false);
     }
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const resetForm = () => {
+    setFormData({ name: '', email: '', phone: '', address: '', vehicleNumber: '', brand: '', model: '', mileage: 0 });
+    setEditingId(null);
+    setIncludeVehicle(true);
+  };
+
+  const openEdit = (customer: any) => {
+    setEditingId(customer.id);
+    setIncludeVehicle(false);
+    setFormData({
+      name: customer.name,
+      email: customer.email || '',
+      phone: customer.phone || '',
+      address: customer.address || '',
+      vehicleNumber: '',
+      brand: '',
+      model: '',
+      mileage: 0
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('/staff/customers', formData);
-      toast.success('New customer profile established');
+      if (editingId) {
+        await api.put(`/staff/customers/${editingId}`, {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address
+        });
+        toast.success('Customer profile updated');
+      } else {
+        const payload: Record<string, unknown> = {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address
+        };
+        if (includeVehicle && formData.vehicleNumber.trim()) {
+          payload.vehicle = {
+            vehicleNumber: formData.vehicleNumber.trim(),
+            brand: formData.brand.trim(),
+            model: formData.model.trim(),
+            mileage: formData.mileage
+          };
+        }
+        await api.post('/staff/customers', payload);
+        toast.success('Customer and vehicle registered');
+      }
       setIsModalOpen(false);
-      setFormData({ name: '', email: '', phone: '', address: '' });
-      fetchCustomers();
+      resetForm();
+      fetchCustomers(searchQuery);
     } catch (err) {
-      toast.error('Registration failed. Please verify contact details.');
+      toastApiError(err, { context: 'save', fallback: 'Could not save customer. Check name, email, and phone.' });
     }
   };
 
@@ -115,7 +168,7 @@ const Customers = () => {
       await api.post(`/orders/${id}/email`);
       toast.success('Invoice dispatched to customer email');
     } catch (err) {
-      toast.error('Dispatch failed. Customer may not have a valid email.');
+      toastApiError(err, { context: 'save', fallback: 'Could not email invoice. The customer may not have a valid email.' });
     }
   };
 
@@ -131,7 +184,7 @@ const Customers = () => {
           </p>
         </div>
         <button 
-          onClick={() => setIsModalOpen(true)} 
+          onClick={() => { resetForm(); setIsModalOpen(true); }} 
           style={{ 
             padding: '12px 24px', 
             background: 'var(--accent-gradient)', 
@@ -208,7 +261,10 @@ const Customers = () => {
                   </div>
                 </div>
               </div>
-              <button onClick={() => fetchHistory(customer.id)} style={{ color: 'var(--accent-primary)', background: 'transparent' }}><ExternalLink size={20} /></button>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <button onClick={() => openEdit(customer)} style={{ color: 'var(--text-muted)', background: 'transparent' }} title="Edit"><Edit2 size={18} /></button>
+                <button onClick={() => fetchHistory(customer.id)} style={{ color: 'var(--accent-primary)', background: 'transparent' }} title="View history"><ExternalLink size={20} /></button>
+              </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -253,6 +309,9 @@ const Customers = () => {
         title={`${selectedHistory?.customer.name}'s Profile`}
         maxWidth="1000px"
       >
+        {isHistoryLoading ? (
+          <p style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>Loading customer history...</p>
+        ) : (
         <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '2rem' }}>
           {/* Profile Sidebar */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -392,9 +451,29 @@ const Customers = () => {
              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Residential Address</label>
              <textarea placeholder="Primary residence for billing..." value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} className="glass" style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid var(--glass-border)', color: 'white', minHeight: '100px' }} />
           </div>
+
+          {!editingId && (
+            <>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                <input type="checkbox" checked={includeVehicle} onChange={e => setIncludeVehicle(e.target.checked)} />
+                Register vehicle with customer
+              </label>
+              {includeVehicle && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+                  <p style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--accent-primary)', textTransform: 'uppercase' }}>Vehicle Details</p>
+                  <input placeholder="License plate / vehicle number" value={formData.vehicleNumber} onChange={e => setFormData({ ...formData, vehicleNumber: e.target.value })} className="glass" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} />
+                  <motionless style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <input placeholder="Brand (e.g. Toyota)" value={formData.brand} onChange={e => setFormData({ ...formData, brand: e.target.value })} className="glass" style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} />
+                    <input placeholder="Model (e.g. Camry)" value={formData.model} onChange={e => setFormData({ ...formData, model: e.target.value })} className="glass" style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} />
+                  </motionless>
+                  <input type="number" placeholder="Current mileage (km)" value={formData.mileage || ''} onChange={e => setFormData({ ...formData, mileage: parseInt(e.target.value) || 0 })} className="glass" style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} />
+                </div>
+              )}
+            </>
+          )}
           
           <button type="submit" style={{ padding: '16px', background: 'var(--accent-gradient)', borderRadius: '12px', color: 'white', fontWeight: '800', marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-            Register Customer <ArrowRight size={18} />
+            {editingId ? 'Save Changes' : 'Register Customer'} <ArrowRight size={18} />
           </button>
         </form>
       </Modal>

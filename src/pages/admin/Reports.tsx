@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from 'sonner';
+import { toastApiError, toastValidationError } from '../../utils/feedback';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -87,8 +88,8 @@ const Reports = () => {
         ...dashRes.data
       });
       setRevenueTrend(trendRes.data);
-    } catch (err) {
-      toast.error('Failed to load strategic data');
+    } catch (err: unknown) {
+      toastApiError(err, { context: 'load', fallback: 'Could not load dashboard data.' });
     }
   };
 
@@ -98,7 +99,7 @@ const Reports = () => {
       const res = await api.get(`/admin/reports/${period}`);
       setPeriodicData(res.data);
     } catch (err) {
-      toast.error(`Failed to load ${period} report`);
+      toastApiError(err, { context: 'load', fallback: `Could not load the ${period} report.` });
     } finally {
       setPeriodLoading(false);
     }
@@ -179,7 +180,7 @@ const Reports = () => {
       toast.success("PDF report downloaded!");
     } catch (e) {
       toast.dismiss();
-      toast.error("Failed to generate PDF report");
+      toastApiError(e, { context: 'generic', fallback: 'Could not generate the PDF report.' });
       console.error(e);
     }
   };
@@ -212,7 +213,7 @@ const Reports = () => {
       toast.success("Detailed report exported!");
     } catch (e) {
       toast.dismiss();
-      toast.error("Failed to generate detailed report");
+      toastApiError(e, { context: 'generic', fallback: 'Could not export the detailed report.' });
     }
   };
 

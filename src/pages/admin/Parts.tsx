@@ -14,6 +14,7 @@ import { partService } from '../../services/partService';
 import type { Part } from '../../services/partService';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
+import { toastApiError, toastValidationError } from '../../utils/feedback';
 import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import TablePagination from '../../components/common/TablePagination';
@@ -66,7 +67,7 @@ const Parts = () => {
       setParts(data.items);
       setTotal(data.total);
     } catch (err: any) {
-      toast.error('Failed to load inventory data');
+      toastApiError(err, { context: 'load', fallback: 'Could not load parts inventory.' });
     } finally {
       setLoading(false);
     }
@@ -129,7 +130,7 @@ const Parts = () => {
       setIsModalOpen(false);
       fetchData();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error saving part details');
+      toastApiError(err, { context: 'save', fallback: 'Could not save part details.' });
     }
   };
 
@@ -142,7 +143,7 @@ const Parts = () => {
       setIsStockModalOpen(false);
       fetchData();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Stock update failed');
+      toastApiError(err, { context: 'save', fallback: 'Could not update stock levels.' });
     }
   };
 
@@ -157,8 +158,8 @@ const Parts = () => {
       await partService.delete(deleteConfirm.id);
       toast.success('Part removed from inventory');
       fetchData();
-    } catch (err) {
-      toast.error('Failed to delete part');
+    } catch (err: unknown) {
+      toastApiError(err, { context: 'delete', fallback: 'Could not delete this part.' });
     }
   };
 
