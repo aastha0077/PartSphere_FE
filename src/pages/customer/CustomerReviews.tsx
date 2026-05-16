@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Star, MessageSquarePlus, Loader2 } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from 'sonner';
+import { toastApiError, toastValidationError } from '../../utils/feedback';
 
 interface Review {
   id: number;
@@ -22,8 +23,8 @@ const CustomerReviews = () => {
     try {
       const res = await api.get<Review[]>('/customer/reviews');
       setReviews(res.data || []);
-    } catch {
-      toast.error('Could not load your reviews.');
+    } catch (err: unknown) {
+      toastApiError(err, { context: 'load', fallback: 'Could not load your reviews.' });
     } finally {
       setLoading(false);
     }
@@ -35,16 +36,27 @@ const CustomerReviews = () => {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (rating < 1 || rating > 5) {
+      toastValidationError('Please select a star rating between 1 and 5.');
+      return;
+    }
+    if (!comment.trim()) {
+      toastValidationError('Please write a short comment about your experience.');
+      return;
+    }
+    if (comment.trim().length < 10) {
+      toastValidationError('Your comment should be at least 10 characters.');
+      return;
+    }
     setSubmitting(true);
     try {
-      await api.post('/customer/reviews', { rating, comment });
+      await api.post('/customer/reviews', { rating, comment: comment.trim() });
       toast.success('Thank you for your feedback.');
       setComment('');
       setRating(5);
       await load();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      toast.error(msg || 'Could not submit review.');
+      toastApiError(err, { context: 'save', fallback: 'Could not submit your review.' });
     } finally {
       setSubmitting(false);
     }

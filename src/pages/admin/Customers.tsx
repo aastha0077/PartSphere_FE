@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, 
@@ -20,6 +20,8 @@ import api from '../../services/api';
 import type { Customer } from '../../types';
 import Modal from '../../components/common/Modal';
 import { toast } from 'sonner';
+import { toastApiError, toastValidationError } from '../../utils/feedback';
+import TablePagination from '../../components/common/TablePagination';
 
 interface CustomerHistory {
   customer: Customer;
@@ -44,12 +46,14 @@ const AdminCustomers = () => {
   });
   const [selectedHistory, setSelectedHistory] = useState<CustomerHistory | null>(null);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(9);
 
   const fetchCustomers = async () => {
     try {
       const res = await api.get('/admin/customers');
       setCustomers(res.data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to fetch customers');
     } finally {
       setLoading(false);
@@ -57,6 +61,31 @@ const AdminCustomers = () => {
   };
 
   useEffect(() => { fetchCustomers(); }, []);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
+
+  const filteredCustomers = useMemo(
+    () =>
+      customers.filter(
+        (c) =>
+          c.name.toLowerCase().includes(search.toLowerCase()) ||
+          c.phone.includes(search)
+      ),
+    [customers, search]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredCustomers.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pagedCustomers = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return filteredCustomers.slice(start, start + pageSize);
+  }, [filteredCustomers, safePage, pageSize]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +102,7 @@ const AdminCustomers = () => {
       setFormData({ name: '', phone: '', email: '', address: '' });
       fetchCustomers();
     } catch (err) {
-      toast.error('Error saving customer data');
+      toastApiError(err, { context: 'save', fallback: 'Could not save customer details.' });
     }
   };
 
@@ -83,7 +112,7 @@ const AdminCustomers = () => {
       const res = await api.get(`/staff/customers/${id}/history`);
       setSelectedHistory(res.data);
     } catch (err) {
-      toast.error('Failed to retrieve customer archives');
+      toastApiError(err, { context: 'load', fallback: 'Could not load purchase history for this customer.' });
     } finally {
       setIsHistoryLoading(false);
     }
@@ -94,7 +123,7 @@ const AdminCustomers = () => {
       await api.post(`/orders/${id}/email`);
       toast.success('Invoice dispatched to customer email');
     } catch (err) {
-      toast.error('Dispatch failed');
+      toastApiError(err, { context: 'save', fallback: 'Could not email the invoice. The customer may not have a valid email.' });
     }
   };
 
@@ -108,11 +137,6 @@ const AdminCustomers = () => {
     });
     setIsModalOpen(true);
   };
-
-  const filteredCustomers = customers.filter(c => 
-    c.name.toLowerCase().includes(search.toLowerCase()) || 
-    c.phone.includes(search)
-  );
 
   return (
     <div className="animate-fade-in">
@@ -167,7 +191,11 @@ const AdminCustomers = () => {
         <AnimatePresence>
           {loading ? (
              [1,2,3].map(i => <div key={i} className="glass-card" style={{ height: '200px', opacity: 0.5 }} />)
-          ) : filteredCustomers.map((customer, idx) => (
+          ) : filteredCustomers.length === 0 ? (
+            <div className="glass-card col-span-full text-center py-16 text-gray-500">
+              No clients match your search criteria.
+            </div>
+          ) : pagedCustomers.map((customer, idx) => (
             <motion.div 
               key={customer.id}
               initial={{ opacity: 0, scale: 0.95 }}
@@ -217,11 +245,25 @@ const AdminCustomers = () => {
         </AnimatePresence>
       </div>
 
+      {!loading && filteredCustomers.length > 0 && (
+        <div className="glass-card" style={{ padding: 0, overflow: 'hidden', marginTop: '1.5rem' }}>
+          <TablePagination
+            page={page}
+            pageSize={pageSize}
+            total={filteredCustomers.length}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            pageSizeOptions={[6, 9, 12, 24]}
+            itemLabel="clients"
+          />
+        </div>
+      )}
+
       <Modal 
         isOpen={!!selectedHistory} 
         onClose={() => setSelectedHistory(null)} 
         title={`${selectedHistory?.customer.name}'s Profile`}
-        width="900px"
+        maxWidth="900px"
       >
         <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '2rem' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>

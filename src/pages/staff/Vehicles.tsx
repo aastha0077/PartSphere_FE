@@ -6,6 +6,7 @@ import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { toastApiError, toastValidationError } from '../../utils/feedback';
 
 const Vehicles = () => {
   const [vehicles, setVehicles] = useState<any[]>([]);
@@ -13,6 +14,7 @@ const Vehicles = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     customerId: '',
     vehicleNumber: '',
@@ -33,7 +35,7 @@ const Vehicles = () => {
       const url = query ? `/staff/vehicles/search?query=${query}` : '/staff/vehicles';
       const res = await api.get(url);
       setVehicles(res.data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to fetch vehicles');
     } finally {
       setLoading(false);
@@ -61,15 +63,44 @@ const Vehicles = () => {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const openCreate = () => {
+    setEditingId(null);
+    setFormData({ customerId: '', vehicleNumber: '', brand: '', model: '', year: new Date().getFullYear(), mileage: 0 });
+    setIsModalOpen(true);
+  };
+
+  const openEdit = (vehicle: any) => {
+    setEditingId(vehicle.id);
+    setFormData({
+      customerId: String(vehicle.customerId),
+      vehicleNumber: vehicle.vehicleNumber,
+      brand: vehicle.brand,
+      model: vehicle.model,
+      year: new Date().getFullYear(),
+      mileage: vehicle.mileage ?? 0
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('/staff/vehicles', formData);
-      toast.success('Vehicle registered successfully');
+      if (editingId) {
+        await api.put(`/staff/vehicles/${editingId}`, {
+          brand: formData.brand,
+          model: formData.model,
+          mileage: formData.mileage
+        });
+        toast.success('Vehicle updated successfully');
+      } else {
+        await api.post('/staff/vehicles', formData);
+        toast.success('Vehicle registered successfully');
+      }
       setIsModalOpen(false);
-      fetchVehicles();
+      setEditingId(null);
+      fetchVehicles(searchQuery);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error registering vehicle. Number might already exist.');
+      toastApiError(err, { context: 'save', fallback: 'Could not save vehicle. The plate number may already exist.' });
     }
   };
 
@@ -84,7 +115,7 @@ const Vehicles = () => {
       toast.success('Vehicle removed from registry');
       fetchVehicles();
     } catch (err) {
-      toast.error('Failed to delete vehicle.');
+      toastApiError(err, { context: 'delete', fallback: 'Could not delete this vehicle.' });
     }
   };
 
@@ -114,7 +145,7 @@ const Vehicles = () => {
               }}
             />
           </div>
-          <button onClick={() => setIsModalOpen(true)} className="glass" style={{ padding: '10px 20px', background: 'var(--accent-gradient)', color: 'white', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
+          <button onClick={openCreate} className="glass" style={{ padding: '10px 20px', background: 'var(--accent-gradient)', color: 'white', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
             <Plus size={18} /> Add Vehicle
           </button>
         </div>
@@ -140,7 +171,7 @@ const Vehicles = () => {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button style={{ color: 'var(--text-muted)', background: 'transparent' }}><Edit2 size={16} /></button>
+                <button onClick={() => openEdit(vehicle)} style={{ color: 'var(--text-muted)', background: 'transparent' }} title="Edit"><Edit2 size={16} /></button>
                 <button onClick={() => handleDelete(vehicle.id)} style={{ color: 'var(--danger)', background: 'transparent' }}><Trash2 size={16} /></button>
               </div>
             </div>
@@ -158,8 +189,9 @@ const Vehicles = () => {
         ))}
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Register Vehicle">
-        <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingId(null); }} title={editingId ? 'Edit Vehicle' : 'Register Vehicle'}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {!editingId && (
           <select 
             value={formData.customerId} 
             onChange={e => setFormData({ ...formData, customerId: e.target.value })} 
@@ -170,11 +202,14 @@ const Vehicles = () => {
             <option value="">Select Owner (Customer)...</option>
             {customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.phone})</option>)}
           </select>
+          )}
+          {!editingId && (
           <input placeholder="License Plate / Vehicle Number" value={formData.vehicleNumber} onChange={e => setFormData({ ...formData, vehicleNumber: e.target.value })} className="glass" style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} required />
+          )}
           <input placeholder="Brand (e.g. Toyota)" value={formData.brand} onChange={e => setFormData({ ...formData, brand: e.target.value })} className="glass" style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} required />
           <input placeholder="Model (e.g. Camry)" value={formData.model} onChange={e => setFormData({ ...formData, model: e.target.value })} className="glass" style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} required />
           <input type="number" placeholder="Current Mileage" value={formData.mileage} onChange={e => setFormData({ ...formData, mileage: parseInt(e.target.value) || 0 })} className="glass" style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} />
-          <button type="submit" style={{ padding: '12px', background: 'var(--accent-gradient)', borderRadius: '8px', color: 'white', fontWeight: 'bold', marginTop: '1rem' }}>Register Vehicle</button>
+          <button type="submit" style={{ padding: '12px', background: 'var(--accent-gradient)', borderRadius: '8px', color: 'white', fontWeight: 'bold', marginTop: '1rem' }}>{editingId ? 'Save Changes' : 'Register Vehicle'}</button>
         </form>
       </Modal>
 

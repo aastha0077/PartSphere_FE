@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Truck, 
@@ -16,8 +16,10 @@ import { vendorService } from '../../services/vendorService';
 import type { Vendor } from '../../services/vendorService';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
+import { toastApiError, toastValidationError } from '../../utils/feedback';
 import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
+import TablePagination from '../../components/common/TablePagination';
 
 const Vendors = () => {
   const { user } = useAuth();
@@ -28,6 +30,8 @@ const Vendors = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(9);
   const [formData, setFormData] = useState({
     name: '',
     contactPerson: '',
@@ -48,7 +52,7 @@ const Vendors = () => {
       const data = await vendorService.getAll();
       setVendors(data);
     } catch (err: any) {
-      toast.error('Failed to load vendors');
+      toastApiError(err, { context: 'load', fallback: 'Could not load vendors.' });
     } finally {
       setLoading(false);
     }
@@ -57,6 +61,32 @@ const Vendors = () => {
   useEffect(() => { 
     fetchVendors(); 
   }, []);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
+
+  const filteredVendors = useMemo(
+    () =>
+      vendors.filter(
+        (v) =>
+          v.name.toLowerCase().includes(search.toLowerCase()) ||
+          v.contactPerson.toLowerCase().includes(search.toLowerCase()) ||
+          v.contact.toLowerCase().includes(search.toLowerCase())
+      ),
+    [vendors, search]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredVendors.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pagedVendors = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return filteredVendors.slice(start, start + pageSize);
+  }, [filteredVendors, safePage, pageSize]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   const handleOpenModal = (vendor: Vendor | null = null) => {
     if (!isAdmin) return;
@@ -92,7 +122,7 @@ const Vendors = () => {
       setIsModalOpen(false);
       fetchVendors();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error saving vendor');
+      toastApiError(err, { context: 'save', fallback: 'Could not save vendor details.' });
     }
   };
 
@@ -108,15 +138,9 @@ const Vendors = () => {
       toast.success('Vendor removed successfully');
       fetchVendors();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to delete vendor. They may have active parts or purchases.');
+      toastApiError(err, { context: 'delete', fallback: 'Could not delete vendor. They may still have linked parts or purchases.' });
     }
   };
-
-  const filteredVendors = vendors.filter(v => 
-    v.name.toLowerCase().includes(search.toLowerCase()) || 
-    v.contactPerson.toLowerCase().includes(search.toLowerCase()) ||
-    v.contact.toLowerCase().includes(search.toLowerCase())
-  );
 
   return (
     <div className="space-y-6">
@@ -164,7 +188,7 @@ const Vendors = () => {
             <div className="col-span-full py-12 text-center text-gray-500 italic">
               No vendors found matching your criteria.
             </div>
-          ) : filteredVendors.map((vendor, idx) => (
+          ) : pagedVendors.map((vendor, idx) => (
             <motion.div 
               key={vendor.id} 
               initial={{ opacity: 0, y: 20 }}
@@ -229,6 +253,17 @@ const Vendors = () => {
           ))}
         </AnimatePresence>
       </div>
+      {!loading && filteredVendors.length > 0 && (
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          total={filteredVendors.length}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          pageSizeOptions={[6, 9, 12, 24]}
+          itemLabel="vendors"
+        />
+      )}
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingVendor ? 'Edit Vendor Details' : 'Register New Vendor'}>
         <form onSubmit={handleSubmit} className="space-y-4">

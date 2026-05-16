@@ -1,18 +1,34 @@
-import React, { useEffect, useState } from 'react';
-import { CreditCard, AlertCircle, CheckCircle, Send, DollarSign } from 'lucide-react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { CheckCircle, Send, DollarSign } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from 'sonner';
+import { toastApiError } from '../../utils/feedback';
+import TablePagination from '../../components/common/TablePagination';
+
+interface CreditRecord {
+  id: number;
+  customerName: string;
+  salesInvoiceId: number;
+  dueAmount: number;
+  dueDate: string;
+  status: string;
+}
 
 const Credits = () => {
-  const [credits, setCredits] = useState<any[]>([]);
+  const [credits, setCredits] = useState<CreditRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(6);
 
   const fetchCredits = async () => {
     try {
-      const res = await api.get('/admin/reports/customers'); // Using the report endpoint which includes pending credits
-      setCredits(res.data.pendingCredits);
-    } catch (err) {
-      console.error('Failed to fetch credits');
+      const res = await api.get('/admin/credits');
+      const pending = (res.data as CreditRecord[]).filter(
+        (c) => c.status !== 'Paid'
+      );
+      setCredits(pending);
+    } catch (err: unknown) {
+      toastApiError(err, { context: 'load', fallback: 'Could not load credit payments.' });
     } finally {
       setLoading(false);
     }
@@ -20,12 +36,42 @@ const Credits = () => {
 
   useEffect(() => { fetchCredits(); }, []);
 
+  const sortedCredits = useMemo(
+    () =>
+      [...credits].sort(
+        (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+      ),
+    [credits]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(sortedCredits.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pagedCredits = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return sortedCredits.slice(start, start + pageSize);
+  }, [sortedCredits, safePage, pageSize]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
   const markAsPaid = async (id: number) => {
     try {
       await api.put(`/admin/credits/${id}/paid`);
+      toast.success('Payment recorded');
       fetchCredits();
     } catch (err) {
-      toast.error('Payment failed');
+      toastApiError(err, { context: 'save', fallback: 'Could not record payment.' });
+    }
+  };
+
+  const sendReminder = async (id: number) => {
+    try {
+      const toastId = toast.loading('Sending reminder...');
+      await api.post(`/admin/credits/${id}/remind`);
+      toast.success('Reminder emailed to customer', { id: toastId });
+    } catch (err) {
+      toastApiError(err, { context: 'save', fallback: 'Could not send reminder. Customer may not have an email on file.' });
     }
   };
 
@@ -37,7 +83,12 @@ const Credits = () => {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
-        {loading ? <p>Loading credits...</p> : credits.map(credit => (
+        {loading ? (
+          <p className="text-gray-500 col-span-full">Loading credits...</p>
+        ) : sortedCredits.length === 0 ? (
+          <p className="text-gray-500 col-span-full text-center py-12">No outstanding credits in the ledger.</p>
+        ) : (
+          pagedCredits.map((credit) => (
           <div key={credit.id} className="glass-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -72,13 +123,29 @@ const Credits = () => {
               >
                 <CheckCircle size={18} /> Mark Paid
               </button>
-              <button style={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', color: 'var(--text-primary)' }}>
+              <button
+                onClick={() => sendReminder(credit.id)}
+                title="Send payment reminder email"
+                style={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', color: 'var(--text-primary)' }}
+              >
                 <Send size={18} />
               </button>
             </div>
           </div>
-        ))}
+          ))
+        )}
       </div>
+      {!loading && sortedCredits.length > 0 && (
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          total={sortedCredits.length}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          pageSizeOptions={[6, 12, 24, 48]}
+          itemLabel="credits"
+        />
+      )}
     </div>
   );
 };

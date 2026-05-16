@@ -8,16 +8,16 @@ import {
   Edit2, 
   Trash2, 
   AlertTriangle,
-  ChevronLeft,
-  ChevronRight,
   RefreshCw
 } from 'lucide-react';
 import { partService } from '../../services/partService';
 import type { Part } from '../../services/partService';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
+import { toastApiError, toastValidationError } from '../../utils/feedback';
 import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
+import TablePagination from '../../components/common/TablePagination';
 
 const Parts = () => {
   const { user } = useAuth();
@@ -30,7 +30,7 @@ const Parts = () => {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(10);
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -51,6 +51,10 @@ const Parts = () => {
     id: null
   });
 
+  useEffect(() => {
+    setPage(1);
+  }, [search, category]);
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
@@ -63,7 +67,7 @@ const Parts = () => {
       setParts(data.items);
       setTotal(data.total);
     } catch (err: any) {
-      toast.error('Failed to load inventory data');
+      toastApiError(err, { context: 'load', fallback: 'Could not load parts inventory.' });
     } finally {
       setLoading(false);
     }
@@ -126,7 +130,7 @@ const Parts = () => {
       setIsModalOpen(false);
       fetchData();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error saving part details');
+      toastApiError(err, { context: 'save', fallback: 'Could not save part details.' });
     }
   };
 
@@ -139,7 +143,7 @@ const Parts = () => {
       setIsStockModalOpen(false);
       fetchData();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Stock update failed');
+      toastApiError(err, { context: 'save', fallback: 'Could not update stock levels.' });
     }
   };
 
@@ -154,12 +158,10 @@ const Parts = () => {
       await partService.delete(deleteConfirm.id);
       toast.success('Part removed from inventory');
       fetchData();
-    } catch (err) {
-      toast.error('Failed to delete part');
+    } catch (err: unknown) {
+      toastApiError(err, { context: 'delete', fallback: 'Could not delete this part.' });
     }
   };
-
-  const totalPages = Math.ceil(total / pageSize);
 
   return (
     <div className="space-y-6">
@@ -314,30 +316,14 @@ const Parts = () => {
         </div>
 
         {/* Pagination */}
-        <div className="px-6 py-4 bg-white/[0.01] border-t border-white/5 flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Showing <span className="text-white font-medium">{parts.length}</span> of <span className="text-white font-medium">{total}</span> items
-          </p>
-          <div className="flex gap-2">
-            <button 
-              disabled={page === 1}
-              onClick={() => setPage(p => p - 1)}
-              className="p-2 text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-20 rounded-lg transition-all"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <span className="flex items-center px-4 text-sm text-white font-medium bg-white/5 rounded-lg">
-              {page} / {totalPages || 1}
-            </span>
-            <button 
-              disabled={page >= totalPages}
-              onClick={() => setPage(p => p + 1)}
-              className="p-2 text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-20 rounded-lg transition-all"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
-        </div>
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          itemLabel="parts"
+        />
       </div>
 
       {/* Edit/Create Modal */}

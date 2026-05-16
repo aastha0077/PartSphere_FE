@@ -23,6 +23,7 @@ import api from '../../services/api';
 import ModernCalendar from '../../components/common/ModernCalendar';
 import Modal from '../../components/common/Modal';
 import { toast } from 'sonner';
+import { toastApiError, toastValidationError } from '../../utils/feedback';
 
 const serviceCategories = [
   { id: 'general', name: 'General Inspection', icon: <Settings2 size={16} /> },
@@ -136,7 +137,7 @@ const CustomerBooking = () => {
       ]);
       setAppointments(aptRes.data);
       setVehicles(vehRes.data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to load booking data');
     } finally {
       setLoading(false);
@@ -147,7 +148,7 @@ const CustomerBooking = () => {
 
   const handleBooking = async () => {
     if (!formData.vehicleId) {
-      toast.error('Please select a vehicle');
+      toastValidationError('Select a vehicle for this appointment.');
       return;
     }
 
@@ -177,7 +178,7 @@ const CustomerBooking = () => {
       setFormData({ ...formData, description: '' });
       fetchData();
     } catch (err) {
-      toast.error('Booking failed. Please try again.');
+      toastApiError(err, { context: 'booking', fallback: 'Could not book the appointment. Please try again.' });
     }
   };
 

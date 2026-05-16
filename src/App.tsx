@@ -76,8 +76,6 @@ function App() {
               <Route path="dashboard" element={<StaffOverview />} />
               <Route path="pos" element={<StaffPOS />} />
               <Route path="parts" element={<AdminParts />} />
-              <Route path="vendors" element={<AdminVendors />} />
-              <Route path="purchases" element={<AdminPurchases />} />
               <Route path="customers" element={<StaffCustomers />} />
               <Route path="vehicles" element={<StaffVehicles />} />
               <Route path="appointments" element={<StaffAppointments />} />

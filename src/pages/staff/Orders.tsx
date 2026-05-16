@@ -1,8 +1,22 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ShoppingCart, Search, Eye, Download, Calendar, Filter, Mail, CheckCircle } from 'lucide-react';
+import { ShoppingCart, Search, Eye, Calendar, Mail, CheckCircle } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from 'sonner';
+import { toastApiError } from '../../utils/feedback';
 import TablePagination from '../../components/common/TablePagination';
+import Modal from '../../components/common/Modal';
+
+interface OrderDetail {
+  id: number;
+  customerName: string;
+  staffName: string;
+  totalAmount: number;
+  discountAmount: number;
+  paymentMethod: string;
+  paymentStatus: string;
+  date: string;
+  items: { partName: string; quantity: number; unitPrice: number; totalPrice: number }[];
+}
 
 const Orders = () => {
   const [orders, setOrders] = useState<any[]>([]);
@@ -10,6 +24,8 @@ const Orders = () => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [selectedOrder, setSelectedOrder] = useState<OrderDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
     setPage(1);
@@ -29,11 +45,23 @@ const Orders = () => {
           new Date(b.date).getTime() - new Date(a.date).getTime() || (b.id ?? 0) - (a.id ?? 0)
       );
       setOrders(list);
-    } catch (err) {
-      toast.error('Failed to load orders data');
-      console.error(err);
+    } catch (err: unknown) {
+      toastApiError(err, { context: 'load', fallback: 'Could not load orders. Please refresh the page.' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const viewOrder = async (id: number) => {
+    setDetailLoading(true);
+    setSelectedOrder(null);
+    try {
+      const res = await api.get(`/orders/${id}`);
+      setSelectedOrder(res.data);
+    } catch (err) {
+      toastApiError(err, { context: 'load', fallback: 'Could not load order details.' });
+    } finally {
+      setDetailLoading(false);
     }
   };
 
@@ -42,8 +70,8 @@ const Orders = () => {
       const toastId = toast.loading('Sending invoice email...');
       await api.post(`/orders/${id}/email`);
       toast.success('Invoice emailed successfully to customer!', { id: toastId });
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to send email invoice');
+    } catch (err: unknown) {
+      toastApiError(err, { context: 'save', fallback: 'Could not send the invoice email. Check that the customer has a valid email.' });
     }
   };
 
@@ -53,24 +81,19 @@ const Orders = () => {
       await api.put(`/orders/${id}/complete`);
       toast.success('Order completed successfully!', { id: toastId });
       fetchOrders();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to complete order');
+    } catch (err: unknown) {
+      toastApiError(err, { context: 'save', fallback: 'Could not complete this order. It may already be paid or stock may be insufficient.' });
     }
   };
 
   const filteredOrders = useMemo(
     () =>
-      orders
-        .filter(
-          (s) =>
-            s.id.toString().includes(searchQuery) ||
-            s.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            s.staffName?.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-        .sort(
-          (a, b) =>
-            new Date(b.date).getTime() - new Date(a.date).getTime() || (b.id ?? 0) - (a.id ?? 0)
-        ),
+      orders.filter(
+        (s) =>
+          s.id.toString().includes(searchQuery) ||
+          s.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          s.staffName?.toLowerCase().includes(searchQuery.toLowerCase())
+      ),
     [orders, searchQuery]
   );
 
@@ -89,31 +112,25 @@ const Orders = () => {
     <div className="animate-fade-in">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight mb-2">Customer Orders</h1>
-          <p className="text-gray-400">View and manage customer online orders and POS transactions.</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight mb-2">Sales Orders</h1>
+          <p className="text-gray-400">View POS transactions and email invoices to customers.</p>
         </div>
-        <div className="flex gap-4">
-          <div className="flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-xl">
-            <Search size={20} className="text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search orders..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent border-none outline-none text-white w-64"
-            />
-          </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white transition-colors">
-            <Filter size={20} />
-            Filter
-          </button>
+        <div className="flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-xl">
+          <Search size={20} className="text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search by order ID, customer, or staff..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="bg-transparent border-none outline-none text-white w-64"
+          />
         </div>
       </div>
 
       <div className="bg-[#11111a] border border-white/5 rounded-2xl overflow-hidden">
         {loading ? (
           <div className="p-12 flex justify-center">
-            <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <>
@@ -176,7 +193,11 @@ const Orders = () => {
                             <CheckCircle size={18} />
                           </button>
                         )}
-                        <button className="p-2 hover:bg-white/10 rounded-lg transition-colors text-gray-400 hover:text-white" title="View Details">
+                        <button
+                          onClick={() => viewOrder(order.id)}
+                          className="p-2 hover:bg-white/10 rounded-lg transition-colors text-gray-400 hover:text-white"
+                          title="View Details"
+                        >
                           <Eye size={18} />
                         </button>
                       </div>
@@ -199,6 +220,48 @@ const Orders = () => {
           </>
         )}
       </div>
+
+      <Modal
+        isOpen={!!selectedOrder || detailLoading}
+        onClose={() => { setSelectedOrder(null); setDetailLoading(false); }}
+        title={selectedOrder ? `Order #${selectedOrder.id}` : 'Order Details'}
+        maxWidth="640px"
+      >
+        {detailLoading ? (
+          <p className="text-center py-8 text-gray-400">Loading order...</p>
+        ) : selectedOrder ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div><span className="text-gray-500">Customer</span><p className="text-white font-medium">{selectedOrder.customerName}</p></div>
+              <div><span className="text-gray-500">Staff</span><p className="text-white font-medium">{selectedOrder.staffName}</p></div>
+              <div><span className="text-gray-500">Date</span><p className="text-white">{new Date(selectedOrder.date).toLocaleString()}</p></div>
+              <div><span className="text-gray-500">Payment</span><p className="text-white">{selectedOrder.paymentMethod} · {selectedOrder.paymentStatus}</p></div>
+            </div>
+            <div className="border-t border-white/10 pt-4">
+              <p className="text-xs font-bold text-gray-500 uppercase mb-2">Line Items</p>
+              {selectedOrder.items.map((item, i) => (
+                <div key={i} className="flex justify-between text-sm py-2 border-b border-white/5">
+                  <span className="text-gray-300">{item.quantity}× {item.partName}</span>
+                  <span className="text-white">Rs. {item.totalPrice.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-between font-bold text-lg pt-2">
+              <span>Total</span>
+              <span className="text-emerald-400">Rs. {selectedOrder.totalAmount.toLocaleString()}</span>
+            </div>
+            {selectedOrder.discountAmount > 0 && (
+              <p className="text-sm text-emerald-500">Loyalty discount: Rs. {selectedOrder.discountAmount.toLocaleString()}</p>
+            )}
+            <button
+              onClick={() => handleEmailInvoice(selectedOrder.id)}
+              className="w-full py-3 mt-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-white font-semibold flex items-center justify-center gap-2"
+            >
+              <Mail size={18} /> Email Invoice
+            </button>
+          </div>
+        ) : null}
+      </Modal>
     </div>
   );
 };
