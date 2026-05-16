@@ -93,6 +93,7 @@ const Customers = () => {
   }, [page, totalPages]);
 
   const fetchHistory = async (id: number) => {
+    setSelectedHistory(null);
     setIsHistoryLoading(true);
     try {
       const res = await api.get(`/staff/customers/${id}/history`);
@@ -428,11 +429,12 @@ const Customers = () => {
              </section>
           </div>
         </div>
+        )}
       </Modal>
 
       {/* Registration Modal */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="New Customer Registration">
-        <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); resetForm(); }} title={editingId ? 'Edit Customer' : 'New Customer Registration'}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div>
              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Full Identity</label>
              <input placeholder="e.g. John Doe" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="glass" style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid var(--glass-border)', color: 'white' }} required />
@@ -462,10 +464,10 @@ const Customers = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
                   <p style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--accent-primary)', textTransform: 'uppercase' }}>Vehicle Details</p>
                   <input placeholder="License plate / vehicle number" value={formData.vehicleNumber} onChange={e => setFormData({ ...formData, vehicleNumber: e.target.value })} className="glass" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} />
-                  <motionless style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                     <input placeholder="Brand (e.g. Toyota)" value={formData.brand} onChange={e => setFormData({ ...formData, brand: e.target.value })} className="glass" style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} />
                     <input placeholder="Model (e.g. Camry)" value={formData.model} onChange={e => setFormData({ ...formData, model: e.target.value })} className="glass" style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} />
-                  </motionless>
+                  </div>
                   <input type="number" placeholder="Current mileage (km)" value={formData.mileage || ''} onChange={e => setFormData({ ...formData, mileage: parseInt(e.target.value) || 0 })} className="glass" style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} />
                 </div>
               )}

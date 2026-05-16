@@ -26,6 +26,9 @@ const POS = () => {
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [customerVehicles, setCustomerVehicles] = useState<{ id: number; vehicleNumber: string; brand: string; model: string }[]>([]);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<number | ''>('');
+  const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -79,6 +82,17 @@ const POS = () => {
   const discount = subtotal > 5000 ? subtotal * 0.1 : 0;
   const total = subtotal - discount;
 
+  const loadCustomerVehicles = async (customerId: number) => {
+    try {
+      const res = await api.get(`/staff/customers/${customerId}/history`);
+      setCustomerVehicles(res.data.vehicles || []);
+      setSelectedVehicleId(res.data.vehicles?.[0]?.id ?? '');
+    } catch {
+      setCustomerVehicles([]);
+      setSelectedVehicleId('');
+    }
+  };
+
   const handleCheckout = async (paymentStatus: string) => {
     if (cart.length === 0) {
       toastValidationError('Add at least one part to the cart before checking out.');
@@ -90,18 +104,32 @@ const POS = () => {
     }
 
     try {
-      await api.post('/orders', {
+      const res = await api.post('/orders', {
         customerId: selectedCustomer.id,
-        paymentMethod: 'Cash', // Defaulting since requirement focused on Status
-        paymentStatus: paymentStatus,
+        vehicleId: selectedVehicleId || undefined,
+        paymentMethod,
+        paymentStatus,
         items: cart.map(item => ({
           vehiclePartId: item.id,
           quantity: item.quantity
         }))
       });
-      toast.success(`Order completed with status: ${paymentStatus}!`);
+      const orderId = res.data?.id;
+      toast.success(`Order #${orderId} completed (${paymentStatus})`);
+
+      if (orderId) {
+        try {
+          await api.post(`/orders/${orderId}/email`);
+          toast.success('Invoice emailed to customer');
+        } catch {
+          // Email optional if customer has no address on file
+        }
+      }
+
       setCart([]);
       setSelectedCustomer(null);
+      setCustomerVehicles([]);
+      setSelectedVehicleId('');
       
       const partsRes = await api.get('/parts?pageSize=1000');
       setParts(partsRes.data.items || []);
@@ -211,6 +239,11 @@ const POS = () => {
             onChange={(e) => {
               const customer = customers.find(c => c.id === parseInt(e.target.value));
               setSelectedCustomer(customer || null);
+              if (customer) loadCustomerVehicles(customer.id);
+              else {
+                setCustomerVehicles([]);
+                setSelectedVehicleId('');
+              }
             }}
             style={{ 
               width: '100%', 
@@ -222,6 +255,38 @@ const POS = () => {
           >
             <option value="">Select Customer</option>
             {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </div>
+
+        {selectedCustomer && customerVehicles.length > 0 && (
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Vehicle</label>
+            <select
+              className="glass"
+              value={selectedVehicleId}
+              onChange={(e) => setSelectedVehicleId(e.target.value ? parseInt(e.target.value) : '')}
+              style={{ width: '100%', padding: '10px', borderRadius: 'var(--radius-md)', color: 'white', border: '1px solid var(--glass-border)' }}
+            >
+              <option value="">No vehicle linked</option>
+              {customerVehicles.map(v => (
+                <option key={v.id} value={v.id}>{v.vehicleNumber} — {v.brand} {v.model}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Payment Method</label>
+          <select
+            className="glass"
+            value={paymentMethod}
+            onChange={(e) => setPaymentMethod(e.target.value)}
+            style={{ width: '100%', padding: '10px', borderRadius: 'var(--radius-md)', color: 'white', border: '1px solid var(--glass-border)' }}
+          >
+            <option value="Cash">Cash</option>
+            <option value="Card">Card</option>
+            <option value="Bank Transfer">Bank Transfer</option>
+            <option value="Esewa">Esewa</option>
           </select>
         </div>
 
