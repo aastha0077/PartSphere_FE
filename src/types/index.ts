@@ -33,7 +33,10 @@ export interface Customer {
   name: string;
   email: string;
   phone: string;
+  address?: string;
   loyaltyPoints: number;
+  totalSpent?: number;
+  vehicleNumbers?: string[];
 }
 
 export interface SalesInvoice {

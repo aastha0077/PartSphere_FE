@@ -212,7 +212,7 @@ const Purchases = () => {
                   <td className="p-4 text-white font-medium">{purchase.vendorName}</td>
                   <td className="p-4">
                     <span className="px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
-                      {purchase.category || 'Inventory'}
+                      Inventory
                     </span>
                   </td>
                   <td className="p-4 text-gray-400">

@@ -263,7 +263,7 @@ const AdminCustomers = () => {
         isOpen={!!selectedHistory} 
         onClose={() => setSelectedHistory(null)} 
         title={`${selectedHistory?.customer.name}'s Profile`}
-        width="900px"
+        maxWidth="900px"
       >
         <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '2rem' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
