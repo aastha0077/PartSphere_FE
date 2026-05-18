@@ -179,54 +179,54 @@ const Purchases = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-white/5 bg-white/5 text-xs uppercase tracking-wider text-gray-500">
-                <th className="p-4 font-bold">Invoice ID</th>
-                <th className="p-4 font-bold">Vendor</th>
-                <th className="p-4 font-bold">Category</th>
-                <th className="p-4 font-bold">Date</th>
-                <th className="p-4 font-bold">Items</th>
-                <th className="p-4 font-bold text-right">Total Amount</th>
+              <tr className="border-b border-white/5 bg-white/5 text-[11px] uppercase tracking-wider text-gray-500">
+                <th className="px-4 py-2 font-bold">Invoice ID</th>
+                <th className="px-4 py-2 font-bold">Vendor</th>
+                <th className="px-4 py-2 font-bold">Category</th>
+                <th className="px-4 py-2 font-bold">Date</th>
+                <th className="px-4 py-2 font-bold">Items</th>
+                <th className="px-4 py-2 font-bold text-right">Total Amount</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="p-12 text-center text-gray-500">
-                    <RefreshCw className="animate-spin mx-auto mb-4" size={24} />
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                    <RefreshCw className="animate-spin mx-auto mb-2" size={16} />
                     Loading purchases...
                   </td>
                 </tr>
               ) : filteredPurchases.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-12 text-center text-gray-500 italic">
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500 italic">
                     No purchase invoices found.
                   </td>
                 </tr>
               ) : pagedPurchases.map((purchase) => (
                 <tr key={purchase.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                  <td className="p-4">
-                    <div className="flex items-center gap-2 text-emerald-400 font-mono font-bold">
-                      <FileText size={16} /> #{purchase.id}
+                  <td className="px-4 py-2">
+                    <div className="flex items-center gap-1.5 text-emerald-400 font-mono text-xs font-bold">
+                      <FileText size={14} /> #{purchase.id}
                     </div>
                   </td>
-                  <td className="p-4 text-white font-medium">{purchase.vendorName}</td>
-                  <td className="p-4">
-                    <span className="px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
+                  <td className="px-4 py-2 text-white text-sm font-medium">{purchase.vendorName}</td>
+                  <td className="px-4 py-2">
+                    <span className="px-2 py-0.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-[9px] font-bold text-indigo-400 uppercase tracking-wider">
                       Inventory
                     </span>
                   </td>
-                  <td className="p-4 text-gray-400">
-                    <div className="flex items-center gap-2">
-                      <Calendar size={14} />
+                  <td className="px-4 py-2 text-gray-400 text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar size={12} />
                       {new Date(purchase.date).toLocaleDateString()}
                     </div>
                   </td>
-                  <td className="p-4 text-gray-400">
+                  <td className="px-4 py-2 text-gray-400 text-xs">
                     {purchase.items.length} item(s)
                   </td>
-                  <td className="p-4 text-right">
-                    <div className="inline-flex items-center gap-1 font-bold text-white bg-white/5 px-3 py-1 rounded-lg">
-                      <span className="text-emerald-500 text-xs mr-1">Rs.</span>
+                  <td className="px-4 py-2 text-right">
+                    <div className="inline-flex items-center gap-0.5 font-bold text-white bg-white/5 px-2 py-0.5 rounded text-sm">
+                      <span className="text-emerald-500 text-[10px] mr-0.5 font-sans">Rs.</span>
                       {purchase.totalAmount.toLocaleString()}
                     </div>
                   </td>

@@ -8,6 +8,7 @@ export interface Part {
   price: number;
   stockQuantity: number;
   description: string;
+  imageUrl?: string;
   vendorId: number;
   vendorName: string;
   isLowStock: boolean;

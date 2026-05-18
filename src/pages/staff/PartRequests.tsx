@@ -73,48 +73,50 @@ const PartRequests = () => {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: 'rgba(255,255,255,0.02)', color: 'var(--text-secondary)', textAlign: 'left' }}>
-              <th style={{ padding: '1.25rem 1.5rem' }}>Customer</th>
-              <th style={{ padding: '1.25rem 1.5rem' }}>Requested Part</th>
-              <th style={{ padding: '1.25rem 1.5rem' }}>Date</th>
-              <th style={{ padding: '1.25rem 1.5rem' }}>Status</th>
-              <th style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>Actions</th>
+              <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Customer</th>
+              <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Requested Part</th>
+              <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Date</th>
+              <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
+              <th style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={5} style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading requests...</td></tr>
+              <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Loading requests...</td></tr>
             ) : requests.length === 0 ? (
-              <tr><td colSpan={5} style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>No pending requests.</td></tr>
+              <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>No pending requests.</td></tr>
             ) : pagedRequests.map(req => (
               <tr key={req.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }} className="table-row-hover">
-                <td style={{ padding: '1.25rem 1.5rem' }}>
-                  <div style={{ fontWeight: '700' }}>{req.customerName}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: #{req.customerId}</div>
+                <td style={{ padding: '6px 12px' }}>
+                  <div style={{ fontWeight: '600', fontSize: '0.875rem', color: 'white' }}>{req.customerName}</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>ID: #{req.customerId}</div>
                 </td>
-                <td style={{ padding: '1.25rem 1.5rem' }}>
-                  <div style={{ fontWeight: '600', color: 'var(--accent-primary)' }}>{req.partName}</div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{req.brand || 'No brand specified'}</div>
+                <td style={{ padding: '6px 12px' }}>
+                  <div style={{ fontWeight: '600', fontSize: '0.875rem', color: 'var(--accent-primary)' }}>{req.partName}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{req.brand || 'No brand specified'}</div>
                 </td>
-                <td style={{ padding: '1.25rem 1.5rem', fontSize: '0.9rem' }}>
+                <td style={{ padding: '6px 12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                   {new Date(req.createdAt).toLocaleDateString()}
                 </td>
-                <td style={{ padding: '1.25rem 1.5rem' }}>
+                <td style={{ padding: '6px 12px' }}>
                   <span style={{
-                    padding: '4px 10px',
+                    padding: '2px 8px',
                     borderRadius: '20px',
                     fontSize: '0.7rem',
                     fontWeight: '800',
                     background: req.status === 'Available' ? 'rgba(16, 185, 129, 0.1)' : req.status === 'Cancelled' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                    color: req.status === 'Available' ? '#10b981' : req.status === 'Cancelled' ? '#ef4444' : '#f59e0b'
+                    color: req.status === 'Available' ? '#10b981' : req.status === 'Cancelled' ? '#ef4444' : '#f59e0b',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.02em'
                   }}>
                     {req.status}
                   </span>
                 </td>
-                <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
+                <td style={{ padding: '6px 12px', textAlign: 'right' }}>
                   <button
                     onClick={() => { setSelectedRequest(req); setUpdateData({ status: req.status, notes: req.staffNotes || '' }); }}
                     className="glass"
-                    style={{ padding: '8px 12px', fontSize: '0.8rem', color: 'white', borderRadius: '8px' }}
+                    style={{ padding: '4px 8px', fontSize: '0.75rem', color: 'white', borderRadius: '6px', fontWeight: '600' }}
                   >
                     Manage
                   </button>

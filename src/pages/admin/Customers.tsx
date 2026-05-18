@@ -14,7 +14,8 @@ import {
   CreditCard,
   Calendar,
   ExternalLink,
-  Send
+  Send,
+  Trash2
 } from 'lucide-react';
 import api from '../../services/api';
 import type { Customer } from '../../types';
@@ -138,6 +139,17 @@ const AdminCustomers = () => {
     setIsModalOpen(true);
   };
 
+  const handleDelete = async (id: number) => {
+    if (!window.confirm("Permanently delete this client and their associated user account? This cannot be undone.")) return;
+    try {
+      await api.delete(`/admin/customers/${id}`);
+      toast.success('Client deleted successfully');
+      fetchCustomers();
+    } catch (err: unknown) {
+      toastApiError(err, { context: 'delete', fallback: 'Could not delete this client.' });
+    }
+  };
+
   return (
     <div className="animate-fade-in">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2.5rem' }}>
@@ -214,12 +226,22 @@ const AdminCustomers = () => {
                     <p style={{ color: 'var(--accent-secondary)', fontSize: '0.85rem', fontWeight: '600' }}>ID: #CS{customer.id.toString().padStart(4, '0')}</p>
                   </div>
                 </div>
-                <button 
-                  onClick={() => handleEdit(customer)}
-                  style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}
-                >
-                  <Edit2 size={18} />
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button 
+                    onClick={() => handleEdit(customer)}
+                    style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}
+                    title="Edit Customer"
+                  >
+                    <Edit2 size={18} />
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(customer.id)}
+                    style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}
+                    title="Delete Customer"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>

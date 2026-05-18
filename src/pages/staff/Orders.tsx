@@ -136,69 +136,69 @@ const Orders = () => {
           <>
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-white/[0.02] border-b border-white/5">
-                <th className="p-4 text-sm font-semibold text-gray-400">Order ID</th>
-                <th className="p-4 text-sm font-semibold text-gray-400">Date</th>
-                <th className="p-4 text-sm font-semibold text-gray-400">Customer</th>
-                <th className="p-4 text-sm font-semibold text-gray-400">Processed By</th>
-                <th className="p-4 text-sm font-semibold text-gray-400">Amount</th>
-                <th className="p-4 text-sm font-semibold text-gray-400">Status</th>
-                <th className="p-4 text-sm font-semibold text-gray-400 text-right">Actions</th>
+              <tr className="bg-white/[0.02] border-b border-white/5 text-[11px] uppercase tracking-wider text-gray-500">
+                <th className="px-4 py-2 font-bold">Order ID</th>
+                <th className="px-4 py-2 font-bold">Date</th>
+                <th className="px-4 py-2 font-bold">Customer</th>
+                <th className="px-4 py-2 font-bold">Processed By</th>
+                <th className="px-4 py-2 font-bold">Amount</th>
+                <th className="px-4 py-2 font-bold">Status</th>
+                <th className="px-4 py-2 font-bold text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-gray-500">
-                    <ShoppingCart size={48} className="mx-auto mb-4 opacity-20" />
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                    <ShoppingCart size={32} className="mx-auto mb-2 opacity-20" />
                     No orders found.
                   </td>
                 </tr>
               ) : (
                 pagedOrders.map((order) => (
                   <tr key={order.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                    <td className="p-4 font-mono text-sm text-white">#{order.id}</td>
-                    <td className="p-4 text-gray-300">
-                      <div className="flex items-center gap-2">
-                        <Calendar size={14} className="text-gray-500" />
+                    <td className="px-4 py-2 font-mono text-xs text-white">#{order.id}</td>
+                    <td className="px-4 py-2 text-gray-300 text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar size={12} className="text-gray-500" />
                         {new Date(order.date).toLocaleDateString()}
                       </div>
                     </td>
-                    <td className="p-4 text-white font-medium">{order.customerName || 'Walk-in Customer'}</td>
-                    <td className="p-4 text-gray-400">{order.staffName || 'System'}</td>
-                    <td className="p-4 text-emerald-400 font-bold">Rs. {order.totalAmount?.toLocaleString()}</td>
-                    <td className="p-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${order.paymentStatus === 'PAID' ? 'bg-emerald-500/10 text-emerald-500' :
+                    <td className="px-4 py-2 text-white text-sm font-medium">{order.customerName || 'Walk-in Customer'}</td>
+                    <td className="px-4 py-2 text-gray-400 text-xs">{order.staffName || 'System'}</td>
+                    <td className="px-4 py-2 text-emerald-400 text-sm font-bold">Rs. {order.totalAmount?.toLocaleString()}</td>
+                    <td className="px-4 py-2">
+                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${order.paymentStatus === 'PAID' ? 'bg-emerald-500/10 text-emerald-500' :
                         order.paymentStatus === 'Pending' ? 'bg-amber-500/10 text-amber-500' :
                           'bg-red-500/10 text-red-500'
                         }`}>
                         {order.paymentStatus || 'Pending'}
                       </span>
                     </td>
-                    <td className="p-4 text-right">
-                      <div className="flex justify-end gap-2">
+                    <td className="px-4 py-2 text-right">
+                      <div className="flex justify-end gap-1">
                         <button
                           onClick={() => handleEmailInvoice(order.id)}
-                          className="p-2 hover:bg-emerald-500/10 rounded-lg transition-colors text-gray-400 hover:text-emerald-400"
+                          className="p-1 hover:bg-emerald-500/10 rounded transition-colors text-gray-400 hover:text-emerald-400"
                           title="Email Invoice to Customer"
                         >
-                          <Mail size={18} />
+                          <Mail size={14} />
                         </button>
                         {order.paymentStatus === 'Pending' && (
                           <button
                             onClick={() => handleCompleteOrder(order.id)}
-                            className="p-2 hover:bg-blue-500/10 rounded-lg transition-colors text-gray-400 hover:text-blue-400"
+                            className="p-1 hover:bg-blue-500/10 rounded transition-colors text-gray-400 hover:text-blue-400"
                             title="Complete Order"
                           >
-                            <CheckCircle size={18} />
+                            <CheckCircle size={14} />
                           </button>
                         )}
                         <button
                           onClick={() => viewOrder(order.id)}
-                          className="p-2 hover:bg-white/10 rounded-lg transition-colors text-gray-400 hover:text-white"
+                          className="p-1 hover:bg-white/10 rounded transition-colors text-gray-400 hover:text-white"
                           title="View Details"
                         >
-                          <Eye size={18} />
+                          <Eye size={14} />
                         </button>
                       </div>
                     </td>

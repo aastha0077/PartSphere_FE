@@ -101,31 +101,31 @@ const StaffReports = () => {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="text-left text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-white/5">
-                    <th className="pb-4 px-4">Identity</th>
-                    <th className="pb-4 px-4 text-right">Transactions</th>
-                    <th className="pb-4 px-4 text-right">Lifetime Value</th>
+                  <tr className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest border-b border-white/5">
+                    <th className="py-2 px-3">Identity</th>
+                    <th className="py-2 px-3 text-right">Transactions</th>
+                    <th className="py-2 px-3 text-right">Lifetime Value</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {data?.topSpenders.map((customer: any, idx: number) => (
                     <tr key={idx} className="group hover:bg-white/[0.02] transition-colors">
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-bold">
+                      <td className="py-2 px-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-emerald-600 rounded-md flex items-center justify-center text-white font-bold text-sm shrink-0">
                             {customer.customerName[0]}
                           </div>
                           <div>
-                            <div className="font-bold text-white group-hover:text-emerald-400 transition-colors">
+                            <div className="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors leading-snug">
                               {customer.customerName}
                             </div>
-                            <div className="text-xs text-gray-500">ID: #{customer.customerId}</div>
+                            <div className="text-[11px] text-gray-500 leading-none">ID: #{customer.customerId}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="py-4 px-4 text-right font-medium">{customer.orderCount} orders</td>
-                      <td className="py-4 px-4 text-right">
-                        <div className="font-bold text-white">Rs. {customer.totalSpent.toLocaleString()}</div>
+                      <td className="py-2 px-3 text-right text-xs font-medium text-gray-300">{customer.orderCount} orders</td>
+                      <td className="py-2 px-3 text-right">
+                        <div className="text-sm font-bold text-white">Rs. {customer.totalSpent.toLocaleString()}</div>
                       </td>
                     </tr>
                   ))}
