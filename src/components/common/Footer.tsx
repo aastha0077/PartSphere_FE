@@ -71,7 +71,7 @@ const Footer = () => {
         color: 'var(--text-muted)',
         fontSize: '0.8rem'
       }}>
-        <p>© 2024 PartSphere AI. All rights reserved.</p>
+        <p>© 2026 PartSphere AI. All rights reserved.</p>
         <div style={{ display: 'flex', gap: '2rem' }}>
           <a href="#" style={{ transition: 'var(--transition)' }} onMouseOver={(e) => e.currentTarget.style.color = 'var(--text-primary)'} onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}>Privacy Policy</a>
           <a href="#" style={{ transition: 'var(--transition)' }} onMouseOver={(e) => e.currentTarget.style.color = 'var(--text-primary)'} onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}>Terms of Service</a>
