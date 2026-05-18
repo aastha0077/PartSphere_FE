@@ -28,12 +28,12 @@ const Header = () => {
 
   return (
     <header style={{
-      height: '80px',
+      height: '5rem',
       width: '100%',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'rgba(10, 10, 12, 0.8)',
+      background: 'rgba(10, 10, 12, 0.75)',
       backdropFilter: 'blur(10px)',
       borderBottom: '1px solid var(--glass-border)',
       position: 'sticky',
