@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { ShieldCheck, LogIn, UserPlus, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import UserMenu from './UserMenu';
@@ -75,7 +75,8 @@ const Header = () => {
         </div>
 
         <nav style={{ display: 'flex', gap: '2rem' }}>
-          <a href="/" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: '500' }}>Home</a>
+          <Link to="/" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: '500', transition: 'var(--transition)' }} className="hover:text-white">Home</Link>
+          <Link to="/about" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: '500', transition: 'var(--transition)' }} className="hover:text-white">About Us</Link>
           <a href="#" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: '500' }}>Features</a>
           <a href="#" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: '500' }}>Pricing</a>
         </nav>
