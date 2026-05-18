@@ -263,6 +263,95 @@ const Login = () => {
           </button>
         </form>
 
+        <div style={{ marginTop: '2.5rem', borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '1.5rem' }}>
+          <p style={{ fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '0.75rem', textAlign: 'center' }}>
+            Quick Role Switcher (One-Click Demo)
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('admin@partsphere.com');
+                setPassword('Admin@123');
+                toast.info('Loaded Administrator credentials');
+              }}
+              style={{
+                padding: '8px',
+                background: 'rgba(99, 102, 241, 0.1)',
+                border: '1px solid rgba(99, 102, 241, 0.2)',
+                borderRadius: '8px',
+                color: '#818cf8',
+                fontSize: '0.75rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(99, 102, 241, 0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(99, 102, 241, 0.1)';
+              }}
+            >
+              Admin
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('staff@partsphere.com');
+                setPassword('Staff@123');
+                toast.info('Loaded Staff Operator credentials');
+              }}
+              style={{
+                padding: '8px',
+                background: 'rgba(16, 185, 129, 0.1)',
+                border: '1px solid rgba(16, 185, 129, 0.2)',
+                borderRadius: '8px',
+                color: '#34d399',
+                fontSize: '0.75rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(16, 185, 129, 0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)';
+              }}
+            >
+              Staff
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('alice@example.com');
+                setPassword('Customer@123');
+                toast.info('Loaded Customer credentials');
+              }}
+              style={{
+                padding: '8px',
+                background: 'rgba(245, 158, 11, 0.1)',
+                border: '1px solid rgba(245, 158, 11, 0.2)',
+                borderRadius: '8px',
+                color: '#fbbf24',
+                fontSize: '0.75rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(245, 158, 11, 0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(245, 158, 11, 0.1)';
+              }}
+            >
+              Customer
+            </button>
+          </div>
+        </div>
+
         <div style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.875rem' }}>
           <p style={{ color: 'var(--text-muted)' }}>
             Don&apos;t have an account?{' '}

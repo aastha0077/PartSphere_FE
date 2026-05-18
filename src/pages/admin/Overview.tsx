@@ -269,40 +269,42 @@ const Overview = () => {
             </button>
           </div>
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
+            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px' }}>
               <thead>
-                <tr style={{ color: 'var(--text-secondary)', textAlign: 'left', fontSize: '0.875rem' }}>
-                  <th style={{ padding: '0.75rem 1rem' }}>Transaction ID</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Customer</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Status</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Amount</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Date</th>
+                <tr style={{ color: 'var(--text-secondary)', textAlign: 'left', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <th style={{ padding: '4px 8px' }}>Transaction ID</th>
+                  <th style={{ padding: '4px 8px' }}>Customer</th>
+                  <th style={{ padding: '4px 8px' }}>Status</th>
+                  <th style={{ padding: '4px 8px' }}>Amount</th>
+                  <th style={{ padding: '4px 8px' }}>Date</th>
                 </tr>
               </thead>
               <tbody>
                 {stats?.recentSales?.map((sale: any) => (
                   <tr key={sale.id} className="table-row-hover" style={{ background: 'rgba(255,255,255,0.02)', transition: 'background 0.2s' }}>
-                    <td style={{ padding: '1rem', borderRadius: '12px 0 0 12px', fontWeight: '500' }}>#{sale.id}</td>
-                    <td style={{ padding: '1rem' }}>{sale.customerName}</td>
-                    <td style={{ padding: '1rem' }}>
+                    <td style={{ padding: '6px 8px', borderRadius: '8px 0 0 8px', fontWeight: '600', fontSize: '0.875rem', color: 'white' }}>#{sale.id}</td>
+                    <td style={{ padding: '6px 8px', fontSize: '0.875rem', color: 'var(--text-primary)' }}>{sale.customerName}</td>
+                    <td style={{ padding: '6px 8px' }}>
                       <span style={{ 
-                        padding: '4px 8px', 
+                        padding: '2px 6px', 
                         background: 'rgba(16, 185, 129, 0.1)', 
                         color: '#10b981', 
-                        borderRadius: '6px',
-                        fontSize: '0.75rem',
-                        fontWeight: '600'
+                        borderRadius: '4px',
+                        fontSize: '0.7rem',
+                        fontWeight: '700',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.02em'
                       }}>Success</span>
                     </td>
-                    <td style={{ padding: '1rem', fontWeight: '700', color: 'white' }}>Rs. {sale.totalAmount.toLocaleString()}</td>
-                    <td style={{ padding: '1rem', borderRadius: '0 12px 12px 0', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                    <td style={{ padding: '6px 8px', fontWeight: '700', color: 'white', fontSize: '0.875rem' }}>Rs. {sale.totalAmount.toLocaleString()}</td>
+                    <td style={{ padding: '6px 8px', borderRadius: '0 8px 8px 0', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
                       {new Date(sale.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
                   </tr>
                 ))}
                 {(!stats?.recentSales || stats.recentSales.length === 0) && (
                   <tr>
-                    <td colSpan={5} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
                       No recent sales found.
                     </td>
                   </tr>

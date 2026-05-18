@@ -199,19 +199,19 @@ const StaffManagement = () => {
         <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
           <thead>
             <tr style={{ background: 'rgba(255,255,255,0.02)', color: 'var(--text-secondary)', textAlign: 'left' }}>
-              <th style={{ padding: '1.25rem', fontSize: '0.875rem', fontWeight: '600' }}>Full Name</th>
-              <th style={{ padding: '1.25rem', fontSize: '0.875rem', fontWeight: '600' }}>System Role</th>
-              <th style={{ padding: '1.25rem', fontSize: '0.875rem', fontWeight: '600' }}>Account Status</th>
-              <th style={{ padding: '1.25rem', fontSize: '0.875rem', fontWeight: '600' }}>Email Address</th>
-              <th style={{ padding: '1.25rem', textAlign: 'right', fontSize: '0.875rem', fontWeight: '600' }}>Actions</th>
+              <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Full Name</th>
+              <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>System Role</th>
+              <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Account Status</th>
+              <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email Address</th>
+              <th style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             <AnimatePresence>
               {loading ? (
-                <tr><td colSpan={5} style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>Synchronizing personnel records...</td></tr>
+                <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Synchronizing personnel records...</td></tr>
               ) : filteredStaff.length === 0 ? (
-                <tr><td colSpan={5} style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>No personnel match your search.</td></tr>
+                <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>No personnel match your search.</td></tr>
               ) : pagedStaff.map((user, idx) => (
                 <motion.tr 
                   key={user.id} 
@@ -221,73 +221,74 @@ const StaffManagement = () => {
                   className="table-row-hover"
                   style={{ borderBottom: '1px solid rgba(255,255,255,0.02)', background: 'transparent' }}
                 >
-                  <td style={{ padding: '1.25rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <td style={{ padding: '6px 12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <div style={{ 
-                        width: '40px', 
-                        height: '40px', 
+                        width: '30px', 
+                        height: '30px', 
                         background: user.role === 'Admin' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(99, 102, 241, 0.1)', 
-                        borderRadius: '10px', 
+                        borderRadius: '6px', 
                         display: 'flex', 
                         alignItems: 'center', 
                         justifyContent: 'center',
-                        color: user.role === 'Admin' ? 'var(--warning)' : 'var(--accent-primary)'
+                        color: user.role === 'Admin' ? 'var(--warning)' : 'var(--accent-primary)',
+                        flexShrink: 0
                       }}>
-                        <Users size={20} />
+                        <Users size={15} />
                       </div>
-                      <span style={{ fontWeight: '600', fontSize: '0.95rem' }}>{user.name}</span>
+                      <span style={{ fontWeight: '600', fontSize: '0.875rem', color: 'white' }}>{user.name}</span>
                     </div>
                   </td>
-                  <td style={{ padding: '1.25rem' }}>
+                  <td style={{ padding: '6px 12px' }}>
                     <div style={{ 
                       display: 'inline-flex', 
                       alignItems: 'center', 
-                      gap: '6px',
-                      padding: '4px 10px',
+                      gap: '4px',
+                      padding: '2px 8px',
                       background: 'rgba(255,255,255,0.03)',
                       borderRadius: '20px',
-                      fontSize: '0.8rem',
-                      fontWeight: '500',
+                      fontSize: '0.75rem',
+                      fontWeight: '600',
                       color: user.role === 'Admin' ? 'var(--warning)' : 'var(--info)'
                     }}>
-                      <Shield size={12} />
+                      <Shield size={10} />
                       {user.role}
                     </div>
                   </td>
-                  <td style={{ padding: '1.25rem' }}>
+                  <td style={{ padding: '6px 12px' }}>
                     <div style={{ 
                       display: 'flex', 
                       alignItems: 'center', 
-                      gap: '8px',
+                      gap: '6px',
                       color: user.isActive ? '#10b981' : '#ef4444',
-                      fontSize: '0.875rem',
-                      fontWeight: '500'
+                      fontSize: '0.8rem',
+                      fontWeight: '600'
                     }}>
-                      {user.isActive ? <CheckCircle size={14} /> : <XCircle size={14} />}
+                      {user.isActive ? <CheckCircle size={12} /> : <XCircle size={12} />}
                       {user.isActive ? 'Operational' : 'Restricted'}
                     </div>
                   </td>
-                  <td style={{ padding: '1.25rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Mail size={14} opacity={0.5} />
+                  <td style={{ padding: '6px 12px', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Mail size={12} opacity={0.5} />
                       {user.email}
                     </div>
                   </td>
-                  <td style={{ padding: '1.25rem', textAlign: 'right' }}>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                  <td style={{ padding: '6px 12px', textAlign: 'right' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
                       <button 
                         onClick={() => handleEdit(user)}
                         style={{ 
-                          padding: '8px 12px', 
+                          padding: '4px 8px', 
                           background: 'rgba(255, 255, 255, 0.05)', 
                           color: 'white',
-                          borderRadius: '8px',
-                          fontSize: '0.8rem',
+                          borderRadius: '6px',
+                          fontSize: '0.75rem',
                           fontWeight: '700',
                           border: '1px solid transparent',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '6px'
+                          gap: '4px'
                         }}
                       >
                         Edit
@@ -295,11 +296,11 @@ const StaffManagement = () => {
                       <button 
                         onClick={() => toggleStatus(user.id)}
                         style={{ 
-                          padding: '8px 16px', 
+                          padding: '4px 10px', 
                           background: user.isActive ? 'rgba(239, 68, 68, 0.05)' : 'rgba(16, 185, 129, 0.05)', 
                           color: user.isActive ? '#ef4444' : '#10b981',
-                          borderRadius: '8px',
-                          fontSize: '0.8rem',
+                          borderRadius: '6px',
+                          fontSize: '0.75rem',
                           fontWeight: '700',
                           border: `1px solid ${user.isActive ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)'}`,
                           transition: 'all 0.2s ease'
@@ -310,15 +311,18 @@ const StaffManagement = () => {
                       <button 
                         onClick={() => handleDelete(user.id)}
                         style={{ 
-                          padding: '8px', 
+                          padding: '4px', 
                           background: 'rgba(239, 68, 68, 0.1)', 
                           color: '#ef4444',
-                          borderRadius: '8px',
-                          border: 'none'
+                          borderRadius: '6px',
+                          border: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
                         }}
                         title="Delete Permanently"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </td>

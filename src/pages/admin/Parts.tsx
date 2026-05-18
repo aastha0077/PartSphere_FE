@@ -8,7 +8,9 @@ import {
   Edit2, 
   Trash2, 
   AlertTriangle,
-  RefreshCw
+  RefreshCw,
+  UploadCloud,
+  Image as ImageIcon
 } from 'lucide-react';
 import { partService } from '../../services/partService';
 import type { Part } from '../../services/partService';
@@ -18,6 +20,7 @@ import { toastApiError, toastValidationError } from '../../utils/feedback';
 import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import TablePagination from '../../components/common/TablePagination';
+import api from '../../services/api';
 
 const Parts = () => {
   const { user } = useAuth();
@@ -36,6 +39,7 @@ const Parts = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
   const [editingPart, setEditingPart] = useState<Part | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     brand: '',
@@ -43,6 +47,7 @@ const Parts = () => {
     price: 0,
     stockQuantity: 0,
     description: '',
+    imageUrl: '',
     vendorId: 1 // Mock vendor for now
   });
 
@@ -91,6 +96,7 @@ const Parts = () => {
         price: part.price,
         stockQuantity: part.stockQuantity,
         description: part.description,
+        imageUrl: part.imageUrl || '',
         vendorId: part.vendorId
       });
     } else {
@@ -102,6 +108,7 @@ const Parts = () => {
         price: 0,
         stockQuantity: 0,
         description: '',
+        imageUrl: '',
         vendorId: 1
       });
     }
@@ -112,6 +119,29 @@ const Parts = () => {
     setEditingPart(part);
     setFormData({ ...formData, stockQuantity: part.stockQuantity });
     setIsStockModalOpen(true);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formDataObj = new FormData();
+    formDataObj.append('file', file);
+
+    try {
+      const res = await api.post<{ url: string }>('/upload', formDataObj, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      setFormData(prev => ({ ...prev, imageUrl: res.data.url }));
+      toast.success('Image uploaded successfully to Cloudinary!');
+    } catch (err: any) {
+      toast.error('Image upload failed: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -220,89 +250,93 @@ const Parts = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-white/5 text-gray-400 text-xs uppercase tracking-wider">
-                <th className="px-6 py-4 font-bold">Part Info</th>
-                <th className="px-6 py-4 font-bold">Category</th>
-                <th className="px-6 py-4 font-bold text-right">Price</th>
-                <th className="px-6 py-4 font-bold text-center">Stock</th>
-                <th className="px-6 py-4 font-bold text-right">Actions</th>
+              <tr className="bg-white/5 text-gray-400 text-[11px] uppercase tracking-wider">
+                <th className="px-4 py-2 font-bold">Part Info</th>
+                <th className="px-4 py-2 font-bold">Category</th>
+                <th className="px-4 py-2 font-bold text-right">Price</th>
+                <th className="px-4 py-2 font-bold text-center">Stock</th>
+                <th className="px-4 py-2 font-bold text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
-                    <RefreshCw className="animate-spin mx-auto mb-2" />
+                  <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                    <RefreshCw className="animate-spin mx-auto mb-2" size={16} />
                     Syncing with warehouse...
                   </td>
                 </tr>
               ) : parts.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500 italic">
+                  <td colSpan={5} className="px-4 py-8 text-center text-gray-500 italic">
                     No matching parts found in inventory.
                   </td>
                 </tr>
               ) : (
                 parts.map((part) => (
                   <tr key={part.id} className="hover:bg-white/[0.02] transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-indigo-500/10 rounded-lg flex items-center justify-center text-indigo-400">
-                          <Package size={20} />
+                    <td className="px-4 py-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-indigo-500/10 rounded-md flex items-center justify-center text-indigo-400 shrink-0 overflow-hidden border border-white/5 shadow-inner">
+                          {part.imageUrl ? (
+                            <img src={part.imageUrl} alt={part.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <Package size={16} />
+                          )}
                         </div>
                         <div>
-                          <p className="text-white font-semibold">{part.name}</p>
-                          <p className="text-xs text-gray-500">{part.brand}</p>
+                          <p className="text-white text-sm font-semibold leading-snug">{part.name}</p>
+                          <p className="text-[11px] text-gray-500 leading-none">{part.brand}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className="px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
+                    <td className="px-4 py-2">
+                      <span className="px-2 py-0.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-[9px] font-bold text-indigo-400 uppercase tracking-wider">
                         {part.category}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right text-white font-mono font-bold">
+                    <td className="px-4 py-2 text-right text-white text-sm font-mono font-bold">
                       Rs. {part.price.toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className="flex flex-col items-center">
+                    <td className="px-4 py-2 text-center">
+                      <div className="flex flex-col items-center justify-center">
                         <span className={`text-sm font-bold ${part.stockQuantity < 10 ? 'text-red-400' : 'text-emerald-400'}`}>
                           {part.stockQuantity}
                         </span>
                         {part.isLowStock && (
-                          <span className="flex items-center gap-1 text-[10px] text-red-500 font-bold uppercase animate-pulse">
-                            <AlertTriangle size={10} />
-                            Low Stock
+                          <span className="flex items-center gap-0.5 text-[9px] text-red-500 font-bold uppercase animate-pulse">
+                            <AlertTriangle size={8} />
+                            Low
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <td className="px-4 py-2 text-right">
+                      <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {(isAdmin || isStaff) && (
                           <button 
                             onClick={() => handleOpenStockModal(part)}
-                            className="p-2 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
+                            className="p-1 text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors"
                             title="Update Stock"
                           >
-                            <RefreshCw size={18} />
+                            <RefreshCw size={14} />
                           </button>
                         )}
                         {isAdmin && (
                           <>
                             <button 
                               onClick={() => handleOpenModal(part)}
-                              className="p-2 text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors"
+                              className="p-1 text-indigo-400 hover:bg-indigo-500/10 rounded transition-colors"
                               title="Edit Part"
                             >
-                              <Edit2 size={18} />
+                              <Edit2 size={14} />
                             </button>
                             <button 
                               onClick={() => handleDelete(part.id)}
-                              className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                              className="p-1 text-red-400 hover:bg-red-500/10 rounded transition-colors"
                               title="Delete Part"
                             >
-                              <Trash2 size={18} />
+                              <Trash2 size={14} />
                             </button>
                           </>
                         )}
@@ -334,6 +368,38 @@ const Parts = () => {
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2 flex flex-col items-center justify-center p-4 bg-white/5 border border-dashed border-white/15 rounded-xl hover:border-indigo-500/50 transition-colors relative group">
+              {formData.imageUrl ? (
+                <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-white/10 group">
+                  <img src={formData.imageUrl} alt="Part Preview" className="w-full h-full object-cover" />
+                  <button 
+                    type="button"
+                    onClick={() => setFormData({ ...formData, imageUrl: '' })}
+                    className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-red-400 font-bold transition-opacity text-xs"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <label className="cursor-pointer w-full flex flex-col items-center gap-2 py-3 text-center">
+                  {uploading ? (
+                    <RefreshCw className="animate-spin text-indigo-500" size={24} />
+                  ) : (
+                    <UploadCloud className="text-gray-400 hover:text-indigo-400 transition-colors" size={24} />
+                  )}
+                  <span className="text-xs font-semibold text-gray-400">
+                    {uploading ? 'Uploading to Cloudinary...' : 'Click to Upload Part Image'}
+                  </span>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleImageUpload} 
+                    className="hidden" 
+                    disabled={uploading}
+                  />
+                </label>
+              )}
+            </div>
             <div className="col-span-2">
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Part Name</label>
               <input 

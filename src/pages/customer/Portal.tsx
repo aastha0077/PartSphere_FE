@@ -430,11 +430,11 @@ const CustomerPortal = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: 'rgba(255,255,255,0.02)', color: 'var(--text-secondary)', textAlign: 'left' }}>
-                  <th style={{ padding: '1rem' }}>Order ID</th>
-                  <th style={{ padding: '1rem' }}>Date</th>
-                  <th style={{ padding: '1rem' }}>Items</th>
-                  <th style={{ padding: '1rem' }}>Total</th>
-                  <th style={{ padding: '1rem' }}>Status</th>
+                  <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Order ID</th>
+                  <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Date</th>
+                  <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Items</th>
+                  <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total</th>
+                  <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -445,16 +445,27 @@ const CustomerPortal = () => {
                   );
                   return rows.length === 0 ? (
                     <tr>
-                      <td colSpan={5} style={{ padding: '2rem', textAlign: 'center' }}>No orders found yet.</td>
+                      <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>No orders found yet.</td>
                     </tr>
                   ) : (
                     rows.map((order: any) => (
-                  <tr key={order.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
-                    <td style={{ padding: '1rem' }}>#{order.id}</td>
-                    <td style={{ padding: '1rem' }}>{new Date(order.date).toLocaleDateString()}</td>
-                    <td style={{ padding: '1rem' }}>{order.items?.length || 0} units</td>
-                    <td style={{ padding: '1rem', fontWeight: '600' }}>Rs. {order.totalAmount.toLocaleString()}</td>
-                    <td style={{ padding: '1rem' }}><span style={{ color: 'var(--success)' }}>Completed</span></td>
+                  <tr key={order.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }} className="table-row-hover">
+                    <td style={{ padding: '6px 12px', fontMono: true, fontWeight: '600', fontSize: '0.875rem', color: 'white' }}>#{order.id}</td>
+                    <td style={{ padding: '6px 12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{new Date(order.date).toLocaleDateString()}</td>
+                    <td style={{ padding: '6px 12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{order.items?.length || 0} units</td>
+                    <td style={{ padding: '6px 12px', fontWeight: '700', fontSize: '0.875rem', color: 'white' }}>Rs. {order.totalAmount.toLocaleString()}</td>
+                    <td style={{ padding: '6px 12px' }}>
+                      <span style={{ 
+                        padding: '2px 8px', 
+                        borderRadius: '20px', 
+                        fontSize: '0.7rem', 
+                        fontWeight: '800',
+                        background: 'rgba(16, 185, 129, 0.1)',
+                        color: '#10b981',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.02em'
+                      }}>Completed</span>
+                    </td>
                   </tr>
                     ))
                   );
@@ -516,32 +527,34 @@ const CustomerPortal = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: 'rgba(255,255,255,0.02)', color: 'var(--text-secondary)', textAlign: 'left' }}>
-                  <th style={{ padding: '1rem' }}>Part Name</th>
-                  <th style={{ padding: '1rem' }}>Brand</th>
-                  <th style={{ padding: '1rem' }}>Requested On</th>
-                  <th style={{ padding: '1rem' }}>Status</th>
-                  <th style={{ padding: '1rem' }}>Staff Notes</th>
+                  <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Part Name</th>
+                  <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Brand</th>
+                  <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Requested On</th>
+                  <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
+                  <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Staff Notes</th>
                 </tr>
               </thead>
               <tbody>
-                {requests.length === 0 ? <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center' }}>No part requests found.</td></tr> : requests.map(req => (
-                  <tr key={req.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
-                    <td style={{ padding: '1rem', fontWeight: '600' }}>{req.partName}</td>
-                    <td style={{ padding: '1rem' }}>{req.brand || 'N/A'}</td>
-                    <td style={{ padding: '1rem' }}>{new Date(req.createdAt).toLocaleDateString()}</td>
-                    <td style={{ padding: '1rem' }}>
+                {requests.length === 0 ? <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>No part requests found.</td></tr> : requests.map(req => (
+                  <tr key={req.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }} className="table-row-hover">
+                    <td style={{ padding: '6px 12px', fontWeight: '600', fontSize: '0.875rem', color: 'white' }}>{req.partName}</td>
+                    <td style={{ padding: '6px 12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{req.brand || 'N/A'}</td>
+                    <td style={{ padding: '6px 12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{new Date(req.createdAt).toLocaleDateString()}</td>
+                    <td style={{ padding: '6px 12px' }}>
                       <span style={{ 
-                        padding: '4px 10px', 
+                        padding: '2px 8px', 
                         borderRadius: '20px', 
                         fontSize: '0.7rem', 
                         fontWeight: '800',
                         background: req.status === 'Available' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                        color: req.status === 'Available' ? '#10b981' : '#f59e0b'
+                        color: req.status === 'Available' ? '#10b981' : '#f59e0b',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.02em'
                       }}>
                         {req.status}
                       </span>
                     </td>
-                    <td style={{ padding: '1rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{req.staffNotes || 'Waiting for response...'}</td>
+                    <td style={{ padding: '6px 12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{req.staffNotes || 'Waiting for response...'}</td>
                   </tr>
                 ))}
               </tbody>
