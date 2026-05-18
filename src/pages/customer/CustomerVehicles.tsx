@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Car, Plus, Navigation, Clock, ShieldCheck, Activity } from 'lucide-react';
+import { Car, Plus, Navigation, Clock, ShieldCheck } from 'lucide-react';
 import api from '../../services/api';
 import Modal from '../../components/common/Modal';
 import { motion } from 'framer-motion';
@@ -53,7 +53,7 @@ const CustomerVehicles = () => {
           </h1>
           <p className="text-gray-400 mt-1">Manage your registered vehicles and maintenance records.</p>
         </div>
-        <button 
+        <button
           onClick={() => setIsModalOpen(true)}
           className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-600/20"
         >
@@ -72,9 +72,9 @@ const CustomerVehicles = () => {
           </div>
         ) : (
           vehicles.map((vehicle) => (
-            <motion.div 
+            <motion.div
               whileHover={{ y: -4 }}
-              key={vehicle.id} 
+              key={vehicle.id}
               className="bg-[#0d0d12] border border-white/5 rounded-2xl overflow-hidden hover:border-indigo-500/30 transition-all group"
             >
               <div className="h-32 bg-gradient-to-br from-indigo-900/20 to-purple-900/10 flex items-center justify-center border-b border-white/5">
@@ -93,20 +93,16 @@ const CustomerVehicles = () => {
 
                 <div className="grid grid-cols-2 gap-4 mt-6">
                   <div className="bg-white/[0.02] p-3 rounded-xl border border-white/5">
-                    <p className="text-[10px] uppercase text-gray-500 font-bold mb-1 flex items-center gap-1"><Navigation size={12}/> Odometer</p>
+                    <p className="text-[10px] uppercase text-gray-500 font-bold mb-1 flex items-center gap-1"><Navigation size={12} /> Odometer</p>
                     <p className="font-mono text-white text-sm">{vehicle.mileage.toLocaleString()} km</p>
                   </div>
                   <div className="bg-white/[0.02] p-3 rounded-xl border border-white/5">
-                    <p className="text-[10px] uppercase text-gray-500 font-bold mb-1 flex items-center gap-1"><Clock size={12}/> Last Service</p>
+                    <p className="text-[10px] uppercase text-gray-500 font-bold mb-1 flex items-center gap-1"><Clock size={12} /> Last Service</p>
                     <p className="text-white text-sm">
                       {vehicle.lastServiceDate ? new Date(vehicle.lastServiceDate).toLocaleDateString() : 'Never'}
                     </p>
                   </div>
                 </div>
-
-                <button className="w-full mt-6 py-3 bg-white/5 hover:bg-white/10 text-indigo-300 font-medium rounded-xl transition-colors flex items-center justify-center gap-2 text-sm">
-                  <Activity size={16} /> View Health Report
-                </button>
               </div>
             </motion.div>
           ))
@@ -117,44 +113,44 @@ const CustomerVehicles = () => {
         <form onSubmit={handleRegister} className="space-y-4">
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-2">License Plate</label>
-            <input 
-              value={formData.vehicleNumber} 
-              onChange={e => setFormData({ ...formData, vehicleNumber: e.target.value })} 
-              className="w-full px-4 py-3 bg-[#0d0d12] border border-white/10 rounded-xl text-white outline-none focus:border-indigo-500" 
+            <input
+              value={formData.vehicleNumber}
+              onChange={e => setFormData({ ...formData, vehicleNumber: e.target.value })}
+              className="w-full px-4 py-3 bg-[#0d0d12] border border-white/10 rounded-xl text-white outline-none focus:border-indigo-500"
               placeholder="e.g. ABC-1234"
-              required 
+              required
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Brand</label>
-              <input 
-                value={formData.brand} 
-                onChange={e => setFormData({ ...formData, brand: e.target.value })} 
-                className="w-full px-4 py-3 bg-[#0d0d12] border border-white/10 rounded-xl text-white outline-none focus:border-indigo-500" 
+              <input
+                value={formData.brand}
+                onChange={e => setFormData({ ...formData, brand: e.target.value })}
+                className="w-full px-4 py-3 bg-[#0d0d12] border border-white/10 rounded-xl text-white outline-none focus:border-indigo-500"
                 placeholder="Toyota"
-                required 
+                required
               />
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Model</label>
-              <input 
-                value={formData.model} 
-                onChange={e => setFormData({ ...formData, model: e.target.value })} 
-                className="w-full px-4 py-3 bg-[#0d0d12] border border-white/10 rounded-xl text-white outline-none focus:border-indigo-500" 
+              <input
+                value={formData.model}
+                onChange={e => setFormData({ ...formData, model: e.target.value })}
+                className="w-full px-4 py-3 bg-[#0d0d12] border border-white/10 rounded-xl text-white outline-none focus:border-indigo-500"
                 placeholder="Camry"
-                required 
+                required
               />
             </div>
           </div>
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Current Mileage (km)</label>
-            <input 
+            <input
               type="number"
-              value={formData.mileage} 
-              onChange={e => setFormData({ ...formData, mileage: parseInt(e.target.value) || 0 })} 
-              className="w-full px-4 py-3 bg-[#0d0d12] border border-white/10 rounded-xl text-white outline-none focus:border-indigo-500" 
-              required 
+              value={formData.mileage}
+              onChange={e => setFormData({ ...formData, mileage: parseInt(e.target.value) || 0 })}
+              className="w-full px-4 py-3 bg-[#0d0d12] border border-white/10 rounded-xl text-white outline-none focus:border-indigo-500"
+              required
             />
           </div>
           <button type="submit" className="w-full mt-4 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-600/20">

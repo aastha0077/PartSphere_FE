@@ -1,27 +1,26 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Cpu, 
-  Users, 
-  Zap, 
-  Target, 
-  Eye, 
-  Mail, 
-  MapPin, 
-  Clock, 
-  ArrowLeft 
+import {
+  Cpu,
+  Users,
+  Zap,
+  Target,
+  Eye,
+  Mail,
+  MapPin,
+  Clock,
+  ArrowLeft
 } from 'lucide-react';
 
 const About = () => {
   const navigate = useNavigate();
 
   return (
-    <div style={{ background: 'var(--bg-primary)', color: 'white', minHeight: '100vh', padding: '80px 2rem' }}>
+    <div style={{ background: 'var(--bg-primary)', color: 'white', minHeight: '100vh', padding: '5rem 2rem' }}>
       <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-        
-        {/* Simple Back button */}
-        <button 
+
+        <button
           onClick={() => navigate('/')}
           style={{
             background: 'transparent',
@@ -49,11 +48,11 @@ const About = () => {
         </section>
 
         {/* Simple Key Metrics */}
-        <section style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', 
+        <section style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
           gap: '1.5rem',
-          marginBottom: '5rem' 
+          marginBottom: '5rem'
         }}>
           <div className="glass-card" style={{ textAlign: 'center', padding: '2rem' }}>
             <div style={{ color: 'var(--accent-secondary)', display: 'inline-flex', marginBottom: '1rem' }}><Cpu size={28} /></div>
@@ -75,9 +74,9 @@ const About = () => {
         </section>
 
         {/* Mission and Vision Grid */}
-        <section style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+        <section style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
           gap: '2.5rem',
           marginBottom: '5rem'
         }}>
@@ -105,10 +104,10 @@ const About = () => {
         {/* Simple Team Section */}
         <section style={{ marginBottom: '5rem' }}>
           <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '2.5rem', textAlign: 'center' }}>Our Team</h2>
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', 
-            gap: '2rem' 
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: '2rem'
           }}>
             <div className="glass-card" style={{ textAlign: 'center', padding: '2rem' }}>
               <div style={{
@@ -178,7 +177,7 @@ const About = () => {
         {/* Contact Info (Clean list style) */}
         <section className="glass-card" style={{ padding: '3rem' }}>
           <h2 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '2rem', textAlign: 'center' }}>Contact Us</h2>
-          
+
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
