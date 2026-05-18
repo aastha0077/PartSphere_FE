@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { Package, Calendar, History, Search, ShoppingBag, Plus, Clock, Sparkles, AlertCircle, Car, CreditCard } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Package, Calendar, History, Search, ShoppingBag, Plus, Clock, Sparkles, AlertCircle, Car, CreditCard, CheckCircle } from 'lucide-react';
 import api from '../../services/api';
 import type { VehiclePart } from '../../types';
 import Modal from '../../components/common/Modal';
 import { toast } from 'sonner';
 import { toastApiError, toastValidationError } from '../../utils/feedback';
+import CustomerReviews from './CustomerReviews';
 
 const CustomerPortal = () => {
   const [parts, setParts] = useState<VehiclePart[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [suggestions, setSuggestions] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'catalog' | 'history' | 'appointments' | 'requests'>('catalog');
+  const [activeTab, setActiveTab] = useState<'catalog' | 'history' | 'appointments' | 'requests' | 'reviews'>('catalog');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
@@ -25,6 +26,29 @@ const CustomerPortal = () => {
     appointmentDate: '',
     notes: ''
   });
+
+  const bookingDays = useMemo(() => {
+    const days = [];
+    const today = new Date();
+    // Start options from tomorrow to prevent scheduling past/same-day times
+    for (let i = 1; days.length < 7; i++) {
+      const nextDate = new Date(today);
+      nextDate.setDate(today.getDate() + i);
+      // Skip Sundays (workshop closed)
+      if (nextDate.getDay() !== 0) {
+        days.push(nextDate);
+      }
+    }
+    return days;
+  }, []);
+
+  const timeSlots = [
+    '09:00 AM', '10:30 AM', '12:00 PM', 
+    '01:30 PM', '03:00 PM', '04:30 PM'
+  ];
+
+  const [selectedDateIndex, setSelectedDateIndex] = useState<number>(0);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('09:00 AM');
   const [requests, setRequests] = useState<any[]>([]);
   const [isRequestOpen, setIsRequestOpen] = useState(false);
   const [requestData, setRequestData] = useState({
@@ -110,8 +134,23 @@ const CustomerPortal = () => {
 
   const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Construct the actual ISO date string from selectedDateIndex and selectedTimeSlot
+    const selectedDay = bookingDays[selectedDateIndex];
+    const [timeStr, ampm] = selectedTimeSlot.split(' ');
+    let [hours, minutes] = timeStr.split(':').map(Number);
+    if (ampm === 'PM' && hours < 12) hours += 12;
+    if (ampm === 'AM' && hours === 12) hours = 0;
+    
+    const appointmentDate = new Date(selectedDay);
+    appointmentDate.setHours(hours, minutes, 0, 0);
+
     try {
-      await api.post('/customer/appointments', bookingData);
+      await api.post('/customer/appointments', {
+        serviceType: bookingData.serviceType,
+        appointmentDate: appointmentDate.toISOString(),
+        notes: bookingData.notes
+      });
       toast.success('Appointment requested successfully!');
       setIsBookingOpen(false);
       const res = await api.get('/customer/appointments');
@@ -222,137 +261,73 @@ const CustomerPortal = () => {
   };
 
   return (
-    <div className="animate-fade-in" style={{ maxWidth: '1200px', margin: '0 auto', padding: '2.5rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
+    <div className="animate-fade-in" style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem 1.5rem' }}>
+      
+      {/* Dynamic Header Banner */}
+      <div className="glass-card mb-8" style={{
+        background: 'linear-gradient(135deg, rgba(30, 30, 40, 0.6) 0%, rgba(10, 10, 15, 0.8) 100%)',
+        border: '1px solid var(--glass-border)',
+        padding: '2rem',
+        borderRadius: '24px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '1.5rem'
+      }}>
         <div>
-          <h1 style={{ fontSize: '2.5rem' }}>Customer <span className="text-gradient">Portal</span></h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Welcome back! Manage your vehicle services and browse parts.</p>
+          <span style={{ fontSize: '0.85rem', color: 'var(--accent-secondary)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CUSTOMER DASHBOARD</span>
+          <h1 style={{ fontSize: '2.3rem', fontWeight: '900', marginTop: '0.25rem', letterSpacing: '-0.02em', color: 'white' }}>
+            Welcome back, <span className="text-gradient">{(history as any)?.customer?.name || 'Valued Client'}</span>!
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', fontSize: '1rem' }}>
+            Manage your garage, view service history, and order premium parts at discounted loyalty rates.
+          </p>
         </div>
-        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-          {/* Loyalty Card */}
-          <div className="glass" style={{ 
-            padding: '12px 20px', 
-            borderRadius: '16px', 
-            background: 'var(--accent-gradient)',
-            color: 'white',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '4px',
-            minWidth: '180px',
-            boxShadow: '0 10px 20px -10px rgba(99, 102, 241, 0.5)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.7rem', fontWeight: '800', opacity: 0.9, textTransform: 'uppercase' }}>Loyalty Balance</span>
-              <Sparkles size={14} />
-            </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: '900' }}>
-              {(history as any)?.customer?.loyaltyPoints || 0} <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>PTS</span>
-            </div>
-            <div style={{ height: '4px', background: 'rgba(255,255,255,0.2)', borderRadius: '2px', marginTop: '4px', overflow: 'hidden' }}>
-              <div style={{ width: `${Math.min(((history as any)?.customer?.loyaltyPoints || 0) / 10, 100)}%`, height: '100%', background: 'white' }} />
-            </div>
-          </div>
-
-          <button onClick={() => setIsBookingOpen(true)} className="glass" style={{ padding: '12px 24px', background: 'var(--accent-gradient)', color: 'white', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
-            <Calendar size={20} /> Book Service
+        
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button onClick={() => setIsBookingOpen(true)} style={{ padding: '12px 24px', background: 'var(--accent-gradient)', color: 'white', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700', boxShadow: '0 8px 20px -8px rgba(99, 102, 241, 0.6)' }}>
+            <Calendar size={18} /> Schedule Service
           </button>
-          <button onClick={() => setIsCartOpen(true)} className="glass" style={{ padding: '12px', background: 'rgba(255,255,255,0.05)', color: 'white', borderRadius: 'var(--radius-md)', position: 'relative' }}>
-            <ShoppingBag size={20} />
+          
+          <button onClick={() => setIsCartOpen(true)} className="glass" style={{ padding: '12px 20px', color: 'white', borderRadius: '12px', position: 'relative', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700' }}>
+            <ShoppingBag size={18} /> 
+            <span>Cart</span>
             {cart.length > 0 && (
-              <span style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'var(--accent-primary)', color: 'white', borderRadius: '50%', width: '18px', height: '18px', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+              <span style={{ background: 'var(--accent-primary)', color: 'white', borderRadius: '50%', width: '20px', height: '20px', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
                 {cart.length}
               </span>
             )}
           </button>
-          <button onClick={() => { localStorage.removeItem('token'); window.location.href = '/login'; }} className="glass" style={{ padding: '12px 24px', color: 'var(--text-secondary)', borderRadius: 'var(--radius-md)' }}>Logout</button>
+          
+          <button onClick={() => { localStorage.removeItem('token'); window.location.href = '/login'; }} className="glass" style={{ padding: '12px 20px', color: 'var(--text-secondary)', borderRadius: '12px', border: '1px solid transparent' }}>Logout</button>
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '2rem', marginBottom: '2.5rem', borderBottom: '1px solid var(--glass-border)' }}>
-        <button onClick={() => setActiveTab('catalog')} style={{ padding: '1rem 0', color: activeTab === 'catalog' ? 'var(--accent-primary)' : 'var(--text-secondary)', borderBottom: activeTab === 'catalog' ? '2px solid var(--accent-primary)' : 'none', background: 'transparent', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Package size={20} /> Parts Catalog
-        </button>
-        <button onClick={() => setActiveTab('history')} style={{ padding: '1rem 0', color: activeTab === 'history' ? 'var(--accent-primary)' : 'var(--text-secondary)', borderBottom: activeTab === 'history' ? '2px solid var(--accent-primary)' : 'none', background: 'transparent', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <History size={20} /> My Orders
-        </button>
-        <button onClick={() => setActiveTab('appointments')} style={{ padding: '1rem 0', color: activeTab === 'appointments' ? 'var(--accent-primary)' : 'var(--text-secondary)', borderBottom: activeTab === 'appointments' ? '2px solid var(--accent-primary)' : 'none', background: 'transparent', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Calendar size={20} /> My Bookings
-        </button>
-        <button onClick={() => setActiveTab('requests')} style={{ padding: '1rem 0', color: activeTab === 'requests' ? 'var(--accent-primary)' : 'var(--text-secondary)', borderBottom: activeTab === 'requests' ? '2px solid var(--accent-primary)' : 'none', background: 'transparent', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <AlertCircle size={20} /> Part Requests
-        </button>
-      </div>
-      
-      {/* AI Maintenance Insights */}
-      <div className="glass-card mb-10" style={{ 
-          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%)',
-          border: '1px solid rgba(99, 102, 241, 0.2)',
-          padding: '1.5rem'
-        }}>
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
-            <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-400">
-              <Sparkles size={20} />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-white">AI Maintenance Insights</h2>
-              <p className="text-xs text-indigo-400 font-medium">Predictive analysis based on mileage and parts fitted to your selected vehicle</p>
-            </div>
-            </div>
-            {myVehicles.length > 0 && (
-              <label className="flex flex-col gap-1 text-xs text-gray-500 min-w-[220px]">
-                <span className="uppercase font-bold tracking-wider">Vehicle</span>
-                <select
-                  value={selectedVehicleId ?? ''}
-                  onChange={(e) => setSelectedVehicleId(Number(e.target.value))}
-                  className="bg-[#0a0a0c] border border-white/15 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-indigo-500"
-                >
-                  {myVehicles.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.brand} {v.model} · {v.vehicleNumber}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
+      {/* Two-Column Responsive Layout */}
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-8">
+        
+        {/* Left Column: Primary Content Area (Tabs & Workspace) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          
+          {/* Tabs Selector */}
+          <div style={{ display: 'flex', gap: '2rem', borderBottom: '1px solid var(--glass-border)' }}>
+            <button onClick={() => setActiveTab('catalog')} style={{ padding: '1rem 0', color: activeTab === 'catalog' ? 'var(--accent-primary)' : 'var(--text-secondary)', borderBottom: activeTab === 'catalog' ? '2px solid var(--accent-primary)' : 'none', background: 'transparent', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Package size={20} /> Parts Catalog
+            </button>
+            <button onClick={() => setActiveTab('history')} style={{ padding: '1rem 0', color: activeTab === 'history' ? 'var(--accent-primary)' : 'var(--text-secondary)', borderBottom: activeTab === 'history' ? '2px solid var(--accent-primary)' : 'none', background: 'transparent', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <History size={20} /> My Orders
+            </button>
+            <button onClick={() => setActiveTab('appointments')} style={{ padding: '1rem 0', color: activeTab === 'appointments' ? 'var(--accent-primary)' : 'var(--text-secondary)', borderBottom: activeTab === 'appointments' ? '2px solid var(--accent-primary)' : 'none', background: 'transparent', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Calendar size={20} /> My Bookings
+            </button>
+            <button onClick={() => setActiveTab('requests')} style={{ padding: '1rem 0', color: activeTab === 'requests' ? 'var(--accent-primary)' : 'var(--text-secondary)', borderBottom: activeTab === 'requests' ? '2px solid var(--accent-primary)' : 'none', background: 'transparent', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <AlertCircle size={20} /> Part Requests
+            </button>
+            <button onClick={() => setActiveTab('reviews')} style={{ padding: '1rem 0', color: activeTab === 'reviews' ? 'var(--accent-primary)' : 'var(--text-secondary)', borderBottom: activeTab === 'reviews' ? '2px solid var(--accent-primary)' : 'none', background: 'transparent', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Sparkles size={20} /> Service Reviews
+            </button>
           </div>
-
-          {myVehicles.length === 0 ? (
-            <p className="text-sm text-gray-400 flex items-center gap-2">
-              <Car size={18} className="text-indigo-400 shrink-0" />
-              Add a vehicle under <strong className="text-white">My Vehicles</strong> to unlock personalized maintenance predictions for your garage.
-            </p>
-          ) : suggestions.length === 0 ? (
-            <p className="text-sm text-gray-400">No maintenance alerts for this vehicle right now. Keep mileage updated after service for better accuracy.</p>
-          ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {suggestions.map((sug: any, idx: number) => (
-              <div key={idx} className="p-4 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="font-semibold text-white">{sug.partName}</h3>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                    sug.urgency === 'Critical' ? 'bg-red-500/20 text-red-400' : 
-                    sug.urgency === 'High' ? 'bg-orange-500/20 text-orange-400' : 
-                    'bg-indigo-500/20 text-indigo-400'
-                  }`}>
-                    {sug.urgency}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-400 leading-relaxed mb-4">{sug.reason}</p>
-                <div className="flex items-center justify-between mt-auto pt-3 border-t border-white/5">
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <Clock size={12} />
-                    <span>~{sug.estimatedRemainingKm}km remaining</span>
-                  </div>
-                  <button type="button" className="text-xs text-indigo-400 font-bold hover:text-indigo-300 transition-colors">
-                    Find Replacement →
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-          )}
-        </div>
 
       <div className="tab-content">
         {activeTab === 'catalog' && (
@@ -363,6 +338,7 @@ const CustomerPortal = () => {
                 <input 
                   type="text" 
                   placeholder="Search premium parts (e.g. V8 Engine, Brake Pads...)" 
+                  value={searchQuery}
                   style={{ background: 'transparent', border: 'none', color: 'white', width: '100%', outline: 'none', fontSize: '1rem' }}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -401,7 +377,15 @@ const CustomerPortal = () => {
                   </div>
                   <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '1.5rem', fontWeight: '900', color: 'var(--accent-primary)' }}>Rs. {part.price.toLocaleString()}</span>
-                    {part.stockQuantity > 0 ? (
+                    {cart.some(item => item.id === part.id) ? (
+                      <button 
+                        onClick={() => setIsCartOpen(true)}
+                        className="glass"
+                        style={{ padding: '10px 16px', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '700', fontSize: '0.9rem', border: '1px solid rgba(16, 185, 129, 0.2)' }}
+                      >
+                        <CheckCircle size={18} /> In Cart
+                      </button>
+                    ) : part.stockQuantity > 0 ? (
                       <button 
                         onClick={() => addToCart(part)}
                         className="glass"
@@ -523,64 +507,321 @@ const CustomerPortal = () => {
         )}
 
         {activeTab === 'requests' && (
-          <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: 'rgba(255,255,255,0.02)', color: 'var(--text-secondary)', textAlign: 'left' }}>
-                  <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Part Name</th>
-                  <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Brand</th>
-                  <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Requested On</th>
-                  <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
-                  <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Staff Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                {requests.length === 0 ? <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>No part requests found.</td></tr> : requests.map(req => (
-                  <tr key={req.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }} className="table-row-hover">
-                    <td style={{ padding: '6px 12px', fontWeight: '600', fontSize: '0.875rem', color: 'white' }}>{req.partName}</td>
-                    <td style={{ padding: '6px 12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{req.brand || 'N/A'}</td>
-                    <td style={{ padding: '6px 12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{new Date(req.createdAt).toLocaleDateString()}</td>
-                    <td style={{ padding: '6px 12px' }}>
-                      <span style={{ 
-                        padding: '2px 8px', 
-                        borderRadius: '20px', 
-                        fontSize: '0.7rem', 
-                        fontWeight: '800',
-                        background: req.status === 'Available' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                        color: req.status === 'Available' ? '#10b981' : '#f59e0b',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.02em'
-                      }}>
-                        {req.status}
-                      </span>
-                    </td>
-                    <td style={{ padding: '6px 12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{req.staffNotes || 'Waiting for response...'}</td>
+          <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+              <div>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: '800', color: 'white' }}>Custom Part Sourcing</h2>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Can't find the exact part you need? Let our team source it for you.</p>
+              </div>
+              <button 
+                onClick={() => { setRequestData({ partName: '', brand: '', description: '' }); setIsRequestOpen(true); }}
+                style={{ 
+                  padding: '10px 20px', 
+                  background: 'var(--accent-gradient)', 
+                  color: 'white', 
+                  borderRadius: '10px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px', 
+                  fontWeight: '700',
+                  boxShadow: '0 8px 16px -6px rgba(99, 102, 241, 0.4)',
+                  cursor: 'pointer',
+                  border: 'none'
+                }}
+              >
+                <Plus size={18} /> Request a Part
+              </button>
+            </div>
+
+            <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: 'rgba(255,255,255,0.02)', color: 'var(--text-secondary)', textAlign: 'left' }}>
+                    <th style={{ padding: '16px 20px', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase' }}>Part Name</th>
+                    <th style={{ padding: '16px 20px', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase' }}>Brand</th>
+                    <th style={{ padding: '16px 20px', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase' }}>Requested On</th>
+                    <th style={{ padding: '16px 20px', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase' }}>Status</th>
+                    <th style={{ padding: '16px 20px', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase' }}>Staff Notes</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {requests.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                        No custom part requests submitted yet. Click "Request a Part" to start.
+                      </td>
+                    </tr>
+                  ) : (
+                    requests.map(req => (
+                      <tr key={req.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }} className="table-row-hover">
+                        <td style={{ padding: '16px 20px', fontWeight: '700', color: 'white' }}>{req.partName}</td>
+                        <td style={{ padding: '16px 20px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{req.brand || 'N/A'}</td>
+                        <td style={{ padding: '16px 20px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{new Date(req.createdAt).toLocaleDateString()}</td>
+                        <td style={{ padding: '16px 20px' }}>
+                          <span style={{ 
+                            padding: '4px 10px', 
+                            borderRadius: '20px', 
+                            fontSize: '0.75rem', 
+                            fontWeight: '800',
+                            background: req.status === 'Available' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                            color: req.status === 'Available' ? '#10b981' : '#f59e0b',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.02em'
+                          }}>
+                            {req.status}
+                          </span>
+                        </td>
+                        <td style={{ padding: '16px 20px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{req.staffNotes || 'Waiting for response...'}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
-      </div>
+
+        {activeTab === 'reviews' && (
+          <div className="glass-card">
+            <CustomerReviews />
+          </div>
+        )}
+      </div> {/* Close tab-content */}
+    </div> {/* Close Left Column */}
+
+      {/* Right Column: Sticky Sidebar for AI Insights & Garage */}
+      <div className="flex flex-col gap-6 lg:self-start lg:sticky lg:top-24">
+        
+        {/* Premium Loyalty Card */}
+        <div className="glass-card" style={{ 
+          background: 'linear-gradient(135deg, #1e1b4b 0%, #311042 100%)',
+          border: '1px solid rgba(139, 92, 246, 0.25)',
+          padding: '1.75rem', 
+          borderRadius: '20px', 
+          color: 'white',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1rem',
+          position: 'relative',
+          overflow: 'hidden',
+          boxShadow: '0 15px 30px -10px rgba(99, 102, 241, 0.4)'
+        }}>
+          <div style={{ position: 'absolute', right: '-20px', bottom: '-20px', width: '120px', height: '120px', background: 'var(--accent-primary)', opacity: 0.15, filter: 'blur(30px)', borderRadius: '50%' }} />
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <span style={{ fontSize: '0.75rem', fontWeight: '800', opacity: 0.7, textTransform: 'uppercase', letterSpacing: '0.05em' }}>MEMBERSHIP STATUS</span>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: '900', color: '#fbbf24', marginTop: '2px' }}>
+                {(history as any)?.customer?.loyaltyPoints > 500 ? 'Platinum Tier' : (history as any)?.customer?.loyaltyPoints > 200 ? 'Gold Tier' : 'Premium Client'}
+              </h3>
+            </div>
+            <div style={{ width: '40px', height: '40px', background: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Sparkles size={20} />
+            </div>
+          </div>
+          
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' }}>
+              <span style={{ fontSize: '2rem', fontWeight: '950' }}>{(history as any)?.customer?.loyaltyPoints || 0}</span>
+              <span style={{ fontSize: '0.85rem', opacity: 0.8, fontWeight: '700' }}>PTS</span>
+            </div>
+            
+            <div style={{ height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+              <div style={{ 
+                width: `${Math.min(((history as any)?.customer?.loyaltyPoints || 0) / 10, 100)}%`, 
+                height: '100%', 
+                background: 'linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%)',
+                borderRadius: '3px'
+              }} />
+            </div>
+            
+            <p style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: '8px', lineHeight: '1.4' }}>
+              Earn 10 points for every Rs. 1,000 spent! Redeem your points automatically for loyalty discounts on purchases over Rs. 5,000.
+            </p>
+          </div>
+        </div>
+
+        {/* Dynamic AI Maintenance Insights */}
+        <div className="glass-card" style={{ 
+          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%)',
+          border: '1px solid rgba(99, 102, 241, 0.2)',
+          padding: '1.5rem',
+          borderRadius: '20px'
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '36px', height: '36px', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-primary)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Sparkles size={18} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1rem', fontWeight: '800', color: 'white' }}>Predictive Maintenance</h3>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>AI-driven garage suggestions</p>
+              </div>
+            </div>
+
+            {myVehicles.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase' }}>Select Active Vehicle</label>
+                <select
+                  value={selectedVehicleId ?? ''}
+                  onChange={(e) => setSelectedVehicleId(Number(e.target.value))}
+                  className="glass"
+                  style={{ 
+                    width: '100%', 
+                    padding: '10px', 
+                    borderRadius: '10px', 
+                    color: 'white', 
+                    background: 'rgba(0,0,0,0.2)', 
+                    border: '1px solid var(--glass-border)',
+                    fontSize: '0.85rem'
+                  }}
+                >
+                  {myVehicles.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.brand} {v.model} ({v.vehicleNumber})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
+              {myVehicles.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
+                  <Car size={32} style={{ margin: '0 auto 10px', opacity: 0.2 }} />
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                    Register your vehicles under <strong style={{ color: 'white' }}>My Vehicles</strong> to unlock smart maintenance logs.
+                  </p>
+                </div>
+              ) : suggestions.length === 0 ? (
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>No immediate service alerts. Keep your mileage updated to get the best predictions!</p>
+              ) : (
+                suggestions.map((sug: any, idx: number) => (
+                  <div key={idx} className="glass" style={{ padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.03)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <h4 style={{ fontSize: '0.9rem', fontWeight: '800', color: 'white' }}>{sug.partName}</h4>
+                      <span style={{ 
+                        padding: '2px 8px', 
+                        borderRadius: '10px', 
+                        fontSize: '0.65rem', 
+                        fontWeight: '800', 
+                        background: sug.urgency === 'Critical' ? 'rgba(239, 68, 68, 0.2)' : sug.urgency === 'High' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(99, 102, 241, 0.2)',
+                        color: sug.urgency === 'Critical' ? '#ef4444' : sug.urgency === 'High' ? '#f59e0b' : 'var(--accent-secondary)'
+                      }}>{sug.urgency}</span>
+                    </div>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>{sug.reason}</p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', borderTop: '1px solid rgba(255,255,255,0.03)', paddingTop: '6px' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>~{sug.estimatedRemainingKm}km left</span>
+                      <button 
+                        onClick={() => {
+                          setActiveTab('catalog');
+                          setSearchQuery(sug.partName);
+                        }}
+                        style={{ fontSize: '0.75rem', color: 'var(--accent-primary)', fontWeight: '700', background: 'transparent' }}
+                      >
+                        Find Part
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
+      </div> {/* Close Right Column */}
+    </div> {/* Close Grid Container */}
 
       <Modal isOpen={isBookingOpen} onClose={() => setIsBookingOpen(false)} title="Book Workshop Service">
-        <form onSubmit={handleBooking} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <label style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Service Type</label>
-          <select value={bookingData.serviceType} onChange={e => setBookingData({...bookingData, serviceType: e.target.value})} className="glass" style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }}>
-            <option>General Maintenance</option>
-            <option>Engine Diagnostic</option>
-            <option>Brake Service</option>
-            <option>Oil Change</option>
-            <option>Tire Rotation</option>
-          </select>
+        <form onSubmit={handleBooking} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '750', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Service Type</label>
+            <select value={bookingData.serviceType} onChange={e => setBookingData({...bookingData, serviceType: e.target.value})} className="glass" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white', background: 'rgba(0,0,0,0.2)' }}>
+              <option>General Maintenance</option>
+              <option>Engine Diagnostic</option>
+              <option>Brake Service</option>
+              <option>Oil Change</option>
+              <option>Tire Rotation</option>
+            </select>
+          </div>
           
-          <label style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Preferred Date & Time</label>
-          <input type="datetime-local" value={bookingData.appointmentDate} onChange={e => setBookingData({...bookingData, appointmentDate: e.target.value})} className="glass" style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} required />
+          <div>
+            <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '750', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Preferred Date</label>
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+              {bookingDays.map((day, idx) => {
+                const isSelected = selectedDateIndex === idx;
+                const isWeekend = day.getDay() === 6; // Saturday
+                return (
+                  <button
+                    type="button"
+                    key={idx}
+                    onClick={() => setSelectedDateIndex(idx)}
+                    className="glass"
+                    style={{
+                      flex: '0 0 75px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      padding: '12px 8px',
+                      borderRadius: '12px',
+                      border: isSelected ? '2px solid var(--accent-primary)' : '1px solid var(--glass-border)',
+                      background: isSelected ? 'rgba(99, 102, 241, 0.15)' : 'rgba(255,255,255,0.02)',
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase' }}>
+                      {day.toLocaleDateString('en-US', { weekday: 'short' })}
+                    </span>
+                    <span style={{ fontSize: '1.4rem', fontWeight: '900', color: 'white', margin: '4px 0' }}>
+                      {day.getDate()}
+                    </span>
+                    <span style={{ fontSize: '0.65rem', color: isWeekend ? 'var(--warning)' : 'var(--text-muted)', fontWeight: '600' }}>
+                      {day.toLocaleDateString('en-US', { month: 'short' })}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '750', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Available Time Slot</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+              {timeSlots.map((slot) => {
+                const isSelected = selectedTimeSlot === slot;
+                return (
+                  <button
+                    type="button"
+                    key={slot}
+                    onClick={() => setSelectedTimeSlot(slot)}
+                    className="glass"
+                    style={{
+                      padding: '10px',
+                      borderRadius: '10px',
+                      border: isSelected ? '2px solid var(--accent-primary)' : '1px solid var(--glass-border)',
+                      background: isSelected ? 'rgba(99, 102, 241, 0.15)' : 'rgba(255,255,255,0.02)',
+                      color: isSelected ? 'white' : 'var(--text-secondary)',
+                      fontWeight: '700',
+                      fontSize: '0.85rem',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    {slot}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           
-          <label style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Additional Notes</label>
-          <textarea value={bookingData.notes} onChange={e => setBookingData({...bookingData, notes: e.target.value})} className="glass" style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white', minHeight: '80px' }} placeholder="Describe any specific issues..." />
+          <div>
+            <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '750', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Additional Notes</label>
+            <textarea value={bookingData.notes} onChange={e => setBookingData({...bookingData, notes: e.target.value})} className="glass" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white', minHeight: '80px', background: 'rgba(0,0,0,0.1)' }} placeholder="Describe any specific issues..." />
+          </div>
           
-          <button type="submit" style={{ padding: '12px', background: 'var(--accent-gradient)', borderRadius: '8px', color: 'white', fontWeight: 'bold', marginTop: '1rem' }}>Confirm Booking</button>
+          <button type="submit" style={{ padding: '14px', background: 'var(--accent-gradient)', borderRadius: '10px', color: 'white', fontWeight: 'bold', marginTop: '0.5rem', boxShadow: '0 8px 20px -8px rgba(99, 102, 241, 0.5)' }}>Confirm Booking</button>
         </form>
       </Modal>
 

@@ -199,72 +199,114 @@ const AdminCustomers = () => {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '1.5rem' }}>
-        <AnimatePresence>
-          {loading ? (
-             [1,2,3].map(i => <div key={i} className="glass-card" style={{ height: '200px', opacity: 0.5 }} />)
-          ) : filteredCustomers.length === 0 ? (
-            <div className="glass-card col-span-full text-center py-16 text-gray-500">
-              No clients match your search criteria.
-            </div>
-          ) : pagedCustomers.map((customer, idx) => (
-            <motion.div 
-              key={customer.id}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: idx * 0.05 }}
-              className="glass-card hover-glow"
-              style={{ position: 'relative' }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <div style={{ width: '56px', height: '56px', background: 'var(--accent-gradient)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 8px 16px -4px rgba(99, 102, 241, 0.3)' }}>
-                    <Users size={28} />
-                  </div>
-                  <div>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: '700' }}>{customer.name}</h3>
-                    <p style={{ color: 'var(--accent-secondary)', fontSize: '0.85rem', fontWeight: '600' }}>ID: #CS{customer.id.toString().padStart(4, '0')}</p>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button 
-                    onClick={() => handleEdit(customer)}
-                    style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}
-                    title="Edit Customer"
+      <div className="glass-card overflow-hidden" style={{ padding: 0 }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)' }}>
+                <th style={{ padding: '16px 20px', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase' }}>ID</th>
+                <th style={{ padding: '16px 20px', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase' }}>Client Name</th>
+                <th style={{ padding: '16px 20px', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase' }}>Contact Info</th>
+                <th style={{ padding: '16px 20px', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase' }}>Address</th>
+                <th style={{ padding: '16px 20px', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase' }}>Loyalty</th>
+                <th style={{ padding: '16px 20px', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    Loading customer records...
+                  </td>
+                </tr>
+              ) : filteredCustomers.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    No clients match your search criteria.
+                  </td>
+                </tr>
+              ) : (
+                pagedCustomers.map((customer) => (
+                  <tr 
+                    key={customer.id} 
+                    className="table-row-hover"
+                    style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'all 0.2s' }}
                   >
-                    <Edit2 size={18} />
-                  </button>
-                  <button 
-                    onClick={() => handleDelete(customer.id)}
-                    style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}
-                    title="Delete Customer"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                  <Phone size={16} opacity={0.6} /> {customer.phone}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                  <Mail size={16} opacity={0.6} /> {customer.email || 'No email provided'}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-secondary)', fontSize: '0.9rem', gridColumn: 'span 2' }}>
-                  <MapPin size={16} opacity={0.6} /> {customer.address || 'No address registered'}
-                </div>
-              </div>
-
-                <button 
-                  onClick={() => fetchHistory(customer.id)}
-                  style={{ flex: 1, padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', fontSize: '0.875rem', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                >
-                  <History size={16} /> Audit History
-                </button>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+                    <td style={{ padding: '16px 20px', fontWeight: '700', color: 'var(--accent-secondary)' }}>
+                      #CS{customer.id.toString().padStart(4, '0')}
+                    </td>
+                    <td style={{ padding: '16px 20px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ width: '36px', height: '36px', background: 'var(--accent-gradient)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>
+                          {customer.name[0]}
+                        </div>
+                        <span style={{ fontWeight: '700', color: 'white' }}>{customer.name}</span>
+                      </div>
+                    </td>
+                    <td style={{ padding: '16px 20px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '0.85rem', color: 'white', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Phone size={12} opacity={0.6} /> {customer.phone}
+                        </span>
+                        {customer.email && (
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Mail size={12} opacity={0.6} /> {customer.email}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td style={{ padding: '16px 20px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                      {customer.address ? (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <MapPin size={12} opacity={0.6} /> {customer.address}
+                        </span>
+                      ) : (
+                        <span className="italic opacity-40">Not Registered</span>
+                      )}
+                    </td>
+                    <td style={{ padding: '16px 20px' }}>
+                      <span style={{ 
+                        padding: '4px 10px', 
+                        borderRadius: '20px', 
+                        fontSize: '0.75rem', 
+                        fontWeight: '700',
+                        background: 'rgba(251, 191, 36, 0.1)', 
+                        color: '#fbbf24'
+                      }}>
+                        {customer.loyaltyPoints || 0} pts
+                      </span>
+                    </td>
+                    <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                        <button 
+                          onClick={() => fetchHistory(customer.id)}
+                          style={{ padding: '6px 12px', borderRadius: '8px', background: 'rgba(99, 102, 241, 0.1)', border: 'none', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-secondary)', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer' }}
+                          title="View Purchase History"
+                        >
+                          <History size={14} /> History
+                        </button>
+                        <button 
+                          onClick={() => handleEdit(customer)}
+                          style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}
+                          title="Edit Details"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(customer.id)}
+                          style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444', border: 'none', cursor: 'pointer' }}
+                          title="Delete Client"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {!loading && filteredCustomers.length > 0 && (
