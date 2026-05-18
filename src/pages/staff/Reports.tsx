@@ -50,6 +50,55 @@ const StaffReports = () => {
     show: { opacity: 1, y: 0 }
   };
 
+  const exportToCSV = () => {
+    try {
+      toast.loading("Generating customer insights report...");
+      const csvRows = [
+        "Customer Insights Report - PartSphere",
+        `Generated Date,${new Date().toLocaleString()}`,
+        "",
+        "HIGH VALUE CUSTOMERS (TOP SPENDERS)",
+        "Customer Name,Customer ID,Transactions,Lifetime Value (Rs.)"
+      ];
+
+      data?.topSpenders?.forEach((c: any) => {
+        csvRows.push(`"${c.customerName}",#${c.customerId},${c.orderCount},${c.totalSpent}`);
+      });
+
+      csvRows.push("");
+      csvRows.push("FREQUENT VISITORS (LOYAL CUSTOMERS)");
+      csvRows.push("Customer Name,Customer ID,Visits,Last Visit");
+
+      data?.frequentCustomers?.forEach((c: any) => {
+        csvRows.push(`"${c.customerName}",#${c.customerId},${c.visitCount},${new Date(c.lastVisit).toLocaleDateString()}`);
+      });
+
+      csvRows.push("");
+      csvRows.push("PENDING CREDITS AND EXPOSURES");
+      csvRows.push("Invoice ID,Customer Name,Customer ID,Due Amount (Rs.),Due Date,Status");
+
+      data?.pendingCredits?.forEach((c: any) => {
+        csvRows.push(`${c.salesInvoiceId},"${c.customerName}",#${c.customerId},${c.dueAmount},${new Date(c.dueDate).toLocaleDateString()},${c.status}`);
+      });
+
+      const csvString = csvRows.join("\n");
+      const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `Customer_Insights_Report_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.dismiss();
+      toast.success("Insights report exported successfully!");
+    } catch (err) {
+      toast.dismiss();
+      toast.error("Could not export the report.");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
@@ -69,12 +118,20 @@ const StaffReports = () => {
             Strategic analytics for customer retention and financial health.
           </p>
         </div>
-        <button 
-          onClick={fetchReports}
-          className="flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all font-bold"
-        >
-          <History size={18} /> Refresh Audit
-        </button>
+        <div className="flex gap-3">
+          <button 
+            onClick={exportToCSV}
+            className="flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all font-bold shadow-lg shadow-emerald-500/20"
+          >
+            <Download size={18} /> Export Insights
+          </button>
+          <button 
+            onClick={fetchReports}
+            className="flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all font-bold"
+          >
+            <History size={18} /> Refresh Audit
+          </button>
+        </div>
       </div>
 
       <motion.div 
