@@ -148,9 +148,9 @@ const Vendors = () => {
         <div>
           <h1 className="text-3xl font-extrabold text-white flex items-center gap-3">
             <Truck className="text-indigo-500" />
-            Vendor <span className="text-indigo-500">Management</span>
+            <span className="text-indigo-500">Vendors</span>
           </h1>
-          <p className="text-gray-400 mt-1">Manage your procurement sources and supplier relationships.</p>
+          <p className="text-gray-400 mt-1">Manage procurement and suppliers.</p>
         </div>
         
         {isAdmin && (
@@ -159,7 +159,7 @@ const Vendors = () => {
             className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-600/20"
           >
             <Plus size={20} />
-            Register Vendor
+            Add Vendor
           </button>
         )}
       </div>
@@ -220,7 +220,7 @@ const Vendors = () => {
                 <div className="flex items-start gap-3">
                   <div className="mt-0.5 text-gray-500"><User size={16} /></div>
                   <div>
-                    <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Contact Person</p>
+                    <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Contact</p>
                     <p className="text-sm text-gray-300 font-medium">{vendor.contactPerson}</p>
                     <p className="text-xs text-gray-500">{vendor.contact}</p>
                   </div>
@@ -293,7 +293,7 @@ const Vendors = () => {
               <input value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} placeholder="e.g. Engine Parts" className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-indigo-500" required />
             </div>
             <div className="col-span-2">
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Office Address</label>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Address</label>
               <textarea value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-indigo-500 min-h-[80px]" required />
             </div>
           </div>

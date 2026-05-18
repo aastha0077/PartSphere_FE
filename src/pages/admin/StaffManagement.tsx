@@ -151,7 +151,7 @@ const StaffManagement = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2.5rem' }}>
         <div>
           <h1 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '0.5rem', letterSpacing: '-0.02em' }}>
-            Personnel <span className="text-gradient">Registry</span>
+            Staff <span className="text-gradient">Management</span>
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>
             Manage system operators, access levels, and account status.
@@ -171,7 +171,7 @@ const StaffManagement = () => {
             boxShadow: '0 10px 20px -10px rgba(99, 102, 241, 0.5)'
           }}
         >
-          <UserPlus size={20} /> Register Personnel
+          <UserPlus size={20} /> Add Staff
         </button>
       </div>
 
@@ -199,10 +199,10 @@ const StaffManagement = () => {
         <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
           <thead>
             <tr style={{ background: 'rgba(255,255,255,0.02)', color: 'var(--text-secondary)', textAlign: 'left' }}>
-              <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Full Name</th>
-              <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>System Role</th>
-              <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Account Status</th>
-              <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email Address</th>
+              <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Name</th>
+              <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Role</th>
+              <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
+              <th style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email</th>
               <th style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Actions</th>
             </tr>
           </thead>

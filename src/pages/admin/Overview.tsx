@@ -154,10 +154,10 @@ const Overview = () => {
             animate={{ opacity: 1, x: 0 }}
             style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '0.5rem', letterSpacing: '-0.03em' }}
           >
-            Dashboard <span className="text-gradient">Overview</span>
+            <span className="text-gradient">Dashboard</span>
           </motion.h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>
-            System health and performance metrics for PartSphere.
+            System health and performance.
           </p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
