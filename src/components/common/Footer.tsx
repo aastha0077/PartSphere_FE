@@ -6,7 +6,7 @@ const Footer = () => {
   return (
     <footer style={{
       background: 'var(--bg-secondary)',
-      padding: '4rem 2rem 2rem',
+      padding: '4rem 2rem 3rem',
       borderTop: '1px solid var(--glass-border)',
       marginTop: 'auto'
     }}>
@@ -18,7 +18,7 @@ const Footer = () => {
         gap: '3rem',
         marginBottom: '4rem'
       }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
               width: '32px',

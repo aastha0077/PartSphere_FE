@@ -77,8 +77,8 @@ const Header = () => {
         <nav style={{ display: 'flex', gap: '2rem' }}>
           <Link to="/" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: '500', transition: 'var(--transition)' }} className="hover:text-white">Home</Link>
           <Link to="/about" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: '500', transition: 'var(--transition)' }} className="hover:text-white">About Us</Link>
-          <a href="#" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: '500' }}>Features</a>
-          <a href="#" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: '500' }}>Pricing</a>
+          <a href="#" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: '500', transition: 'var(--transition)' }} className="hover:text-white">Features</a>
+          <a href="#" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: '500', transition: 'var(--transition)' }} className="hover:text-white">Pricing</a>
         </nav>
 
         <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
