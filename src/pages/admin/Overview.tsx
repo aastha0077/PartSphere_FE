@@ -218,7 +218,7 @@ const Overview = () => {
         marginBottom: '2.5rem'
       }}>
         <DashboardCard 
-          title="Monthly Revenue" 
+          title="Revenue" 
           value={`Rs. ${stats?.monthRevenue?.toLocaleString() || '0'}`}
           icon={<DollarSign size={28} />}
           change="+14.2%"
@@ -226,7 +226,7 @@ const Overview = () => {
           delay={0.1}
         />
         <DashboardCard 
-          title="Inventory Items" 
+          title="Inventory" 
           value={stats?.totalParts || '0'}
           icon={<Package size={28} />}
           change="+12"
@@ -242,7 +242,7 @@ const Overview = () => {
           delay={0.3}
         />
         <DashboardCard 
-          title="Total Staff" 
+          title="Staff" 
           value={stats?.totalStaff || '0'}
           icon={<Users size={28} />}
           change="Stable"
@@ -260,22 +260,22 @@ const Overview = () => {
           style={{ padding: '1.5rem' }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: '700' }}>Recent Sales Activity</h3>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '700' }}>Recent Sales</h3>
             <button 
               onClick={() => navigate('/admin/reports')}
               style={{ color: 'var(--accent-primary)', fontSize: '0.875rem', fontWeight: '600' }}
             >
-              View All Transactions
+              View All
             </button>
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px' }}>
               <thead>
                 <tr style={{ color: 'var(--text-secondary)', textAlign: 'left', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  <th style={{ padding: '4px 8px' }}>Transaction ID</th>
+                  <th style={{ padding: '4px 8px' }}>ID</th>
                   <th style={{ padding: '4px 8px' }}>Customer</th>
                   <th style={{ padding: '4px 8px' }}>Status</th>
-                  <th style={{ padding: '4px 8px' }}>Amount</th>
+                  <th style={{ padding: '4px 8px' }}>Total</th>
                   <th style={{ padding: '4px 8px' }}>Date</th>
                 </tr>
               </thead>

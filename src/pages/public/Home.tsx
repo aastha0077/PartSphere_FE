@@ -19,18 +19,18 @@ const Home = () => {
   const features = [
     {
       icon: <Package className="text-indigo-500" size={24} />,
-      title: "Inventory Mastery",
-      desc: "Real-time tracking of parts with automated low-stock alerts and smart categorization."
+      title: "Inventory",
+      desc: "Real-time tracking of parts with automated low-stock alerts."
     },
     {
       icon: <BarChart3 className="text-purple-500" size={24} />,
-      title: "Financial Intelligence",
-      desc: "Deep insights into sales performance, revenue trends, and vendor ledger management."
+      title: "Analytics",
+      desc: "Deep insights into sales performance and revenue trends."
     },
     {
       icon: <Users className="text-blue-500" size={24} />,
-      title: "Customer CRM",
-      desc: "Maintain detailed vehicle histories and customer profiles with integrated loyalty rewards."
+      title: "CRM",
+      desc: "Detailed vehicle histories and customer profiles."
     }
   ];
 
@@ -67,7 +67,7 @@ const Home = () => {
             border: '1px solid rgba(99, 102, 241, 0.2)'
           }}>
             <Settings size={16} className="animate-spin-slow" />
-            Next-Gen Inventory Management
+            Inventory Management
           </div>
           <h1 style={{ 
             fontSize: 'clamp(3rem, 8vw, 5rem)', 
@@ -157,7 +157,7 @@ const Home = () => {
               border: '1px solid rgba(99, 102, 241, 0.35)'
             }}
           >
-            Customer sign up
+            Sign Up
           </button>
         </div>
       </section>
@@ -228,7 +228,7 @@ const Home = () => {
               fontSize: '1.1rem'
             }}
           >
-            Start Free Trial
+            Get Started
           </button>
         </div>
       </section>
