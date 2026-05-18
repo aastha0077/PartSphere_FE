@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { ShieldCheck, Mail, Phone, Globe } from 'lucide-react';
 
 const Footer = () => {
@@ -19,9 +20,9 @@ const Footer = () => {
       }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ 
-              width: '32px', 
-              height: '32px', 
+            <div style={{
+              width: '32px',
+              height: '32px',
               background: 'var(--accent-gradient)',
               borderRadius: '8px',
               display: 'flex',
@@ -39,6 +40,7 @@ const Footer = () => {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <h3 style={{ fontSize: '1.1rem', marginBottom: '0.25rem' }}>Quick Links</h3>
+          <Link to="/about" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', transition: 'var(--transition)' }} onMouseOver={(e) => e.currentTarget.style.color = 'var(--accent-primary)'} onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}>About Us</Link>
           <a href="#" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', transition: 'var(--transition)' }} onMouseOver={(e) => e.currentTarget.style.color = 'var(--accent-primary)'} onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}>Features</a>
           <a href="#" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', transition: 'var(--transition)' }} onMouseOver={(e) => e.currentTarget.style.color = 'var(--accent-primary)'} onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}>Pricing</a>
           <a href="#" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', transition: 'var(--transition)' }} onMouseOver={(e) => e.currentTarget.style.color = 'var(--accent-primary)'} onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}>Documentation</a>

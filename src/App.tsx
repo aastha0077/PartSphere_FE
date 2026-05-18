@@ -10,10 +10,10 @@ import StaffLayout from './layouts/StaffLayout';
 import CustomerLayout from './layouts/CustomerLayout';
 
 const Home = lazy(() => import('./pages/public/Home'));
+const About = lazy(() => import('./pages/public/About'));
 const Login = lazy(() => import('./pages/auth/Login'));
 const Signup = lazy(() => import('./pages/auth/Signup'));
 const Unauthorized = lazy(() => import('./pages/Unauthorized'));
-
 const AdminOverview = lazy(() => import('./pages/admin/Overview'));
 const AdminParts = lazy(() => import('./pages/admin/Parts'));
 const AdminVendors = lazy(() => import('./pages/admin/Vendors'));
@@ -55,6 +55,7 @@ function App() {
         <Suspense fallback={<Loading />}>
           <Routes>
             <Route path="/" element={<MainLayout><Home /></MainLayout>} />
+            <Route path="/about" element={<MainLayout><About /></MainLayout>} />
             <Route path="/login" element={<MainLayout><Login /></MainLayout>} />
             <Route path="/signup" element={<MainLayout><Signup /></MainLayout>} />
             <Route path="/unauthorized" element={<Unauthorized />} />
