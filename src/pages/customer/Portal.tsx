@@ -276,18 +276,18 @@ const CustomerPortal = () => {
         gap: '1.5rem'
       }}>
         <div>
-          <span style={{ fontSize: '0.85rem', color: 'var(--accent-secondary)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CUSTOMER DASHBOARD</span>
+          <span style={{ fontSize: '0.85rem', color: 'var(--accent-secondary)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>DASHBOARD</span>
           <h1 style={{ fontSize: '2.3rem', fontWeight: '900', marginTop: '0.25rem', letterSpacing: '-0.02em', color: 'white' }}>
-            Welcome back, <span className="text-gradient">{(history as any)?.customer?.name || 'Valued Client'}</span>!
+            Hello, <span className="text-gradient">{(history as any)?.customer?.name || 'Client'}</span>!
           </h1>
           <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', fontSize: '1rem' }}>
-            Manage your garage, view service history, and order premium parts at discounted loyalty rates.
+            Track your vehicles, service history, and order premium parts.
           </p>
         </div>
         
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <button onClick={() => setIsBookingOpen(true)} style={{ padding: '12px 24px', background: 'var(--accent-gradient)', color: 'white', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700', boxShadow: '0 8px 20px -8px rgba(99, 102, 241, 0.6)' }}>
-            <Calendar size={18} /> Schedule Service
+            <Calendar size={18} /> Book Service
           </button>
           
           <button onClick={() => setIsCartOpen(true)} className="glass" style={{ padding: '12px 20px', color: 'white', borderRadius: '12px', position: 'relative', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700' }}>

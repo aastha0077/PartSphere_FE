@@ -57,19 +57,19 @@ const About = () => {
           <div className="glass-card" style={{ textAlign: 'center', padding: '2rem' }}>
             <div style={{ color: 'var(--accent-secondary)', display: 'inline-flex', marginBottom: '1rem' }}><Cpu size={28} /></div>
             <h3 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.25rem' }}>10,000+</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>Parts Cataloged</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>Cataloged Parts</p>
           </div>
 
           <div className="glass-card" style={{ textAlign: 'center', padding: '2rem' }}>
             <div style={{ color: 'var(--accent-secondary)', display: 'inline-flex', marginBottom: '1rem' }}><Users size={28} /></div>
             <h3 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.25rem' }}>500+</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>Active Workshops</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>Workshops</p>
           </div>
 
           <div className="glass-card" style={{ textAlign: 'center', padding: '2rem' }}>
             <div style={{ color: 'var(--accent-secondary)', display: 'inline-flex', marginBottom: '1rem' }}><Zap size={28} /></div>
             <h3 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.25rem' }}>99.9%</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>System Uptime</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>Uptime</p>
           </div>
         </section>
 
@@ -83,20 +83,20 @@ const About = () => {
           <div className="glass-card" style={{ padding: '2.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.25rem' }}>
               <div style={{ color: 'var(--accent-primary)' }}><Target size={24} /></div>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Our Mission</h2>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Mission</h2>
             </div>
             <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, fontSize: '0.95rem' }}>
-              To replace slow and outdated paper processes in workshops with fast, automated, and easy-to-use digital inventory and tracking tools.
+              Automating workshop operations with fast, clean digital tools.
             </p>
           </div>
 
           <div className="glass-card" style={{ padding: '2.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.25rem' }}>
               <div style={{ color: 'var(--accent-primary)' }}><Eye size={24} /></div>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Our Vision</h2>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Vision</h2>
             </div>
             <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, fontSize: '0.95rem' }}>
-              To create the main software standard for the global automotive aftermarket, connecting suppliers, mechanics, and car owners.
+              Connecting suppliers, mechanics, and owners globally.
             </p>
           </div>
         </section>
@@ -126,8 +126,8 @@ const About = () => {
                 AM
               </div>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.25rem' }}>Alex Mercer</h3>
-              <p style={{ color: 'var(--accent-secondary)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.75rem' }}>CEO & Co-Founder</p>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>Former systems engineer focused on supply-chain logistics.</p>
+              <p style={{ color: 'var(--accent-secondary)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.75rem' }}>CEO</p>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>Logistics and systems engineering expert.</p>
             </div>
 
             <div className="glass-card" style={{ textAlign: 'center', padding: '2rem' }}>
@@ -147,8 +147,8 @@ const About = () => {
                 CC
               </div>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.25rem' }}>Dr. Clara Chen</h3>
-              <p style={{ color: 'var(--accent-secondary)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.75rem' }}>Chief Technology Officer</p>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>Expert in operational research and automated stock replenishment.</p>
+              <p style={{ color: 'var(--accent-secondary)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.75rem' }}>CTO</p>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>Automated inventory systems specialist.</p>
             </div>
 
             <div className="glass-card" style={{ textAlign: 'center', padding: '2rem' }}>
@@ -168,8 +168,8 @@ const About = () => {
                 MV
               </div>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.25rem' }}>Marcus Vance</h3>
-              <p style={{ color: 'var(--accent-secondary)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.75rem' }}>Product Specialist</p>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>Former workshop owner with 15 years of mechanical experience.</p>
+              <p style={{ color: 'var(--accent-secondary)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.75rem' }}>Product Lead</p>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>Product developer and former mechanic.</p>
             </div>
           </div>
         </section>
@@ -195,14 +195,14 @@ const About = () => {
               <div style={{ color: 'var(--accent-secondary)' }}><MapPin size={20} /></div>
               <div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Locations</div>
-                <span style={{ fontSize: '0.95rem', color: 'white', fontWeight: 600 }}>Silicon Valley & Munich</span>
+                <span style={{ fontSize: '0.95rem', color: 'white', fontWeight: 600 }}>US & Europe</span>
               </div>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={{ color: 'var(--accent-secondary)' }}><Clock size={20} /></div>
               <div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Support Hours</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Support</div>
                 <span style={{ fontSize: '0.95rem', color: 'white', fontWeight: 600 }}>Mon - Fri, 9 AM - 6 PM</span>
               </div>
             </div>
