@@ -8,7 +8,7 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
-  
+
   const isLoginPage = location.pathname === '/login';
   const isSignupPage = location.pathname === '/signup';
 
@@ -18,11 +18,11 @@ const Header = () => {
       return;
     }
 
-    const dashboardPath = 
+    const dashboardPath =
       user?.role === 'Admin' ? '/admin/dashboard' :
-      user?.role === 'Staff' ? '/staff/dashboard' :
-      '/customer/dashboard';
-    
+        user?.role === 'Staff' ? '/staff/dashboard' :
+          '/customer/dashboard';
+
     navigate(dashboardPath);
   };
 
@@ -48,18 +48,18 @@ const Header = () => {
         alignItems: 'center',
         justifyContent: 'space-between'
       }}>
-        <div 
+        <div
           onClick={handleLogoClick}
-          style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '12px', 
-            cursor: 'pointer' 
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            cursor: 'pointer'
           }}
         >
-          <div style={{ 
-            width: '40px', 
-            height: '40px', 
+          <div style={{
+            width: '40px',
+            height: '40px',
             background: 'var(--accent-gradient)',
             borderRadius: '10px',
             display: 'flex',
@@ -90,7 +90,7 @@ const Header = () => {
                   <span className="text-sm font-semibold text-white">{user.name}</span>
                 </div>
               )}
-              <button 
+              <button
                 onClick={() => {
                   const path = user?.role === 'Admin' ? '/admin/dashboard' : user?.role === 'Staff' ? '/staff/dashboard' : '/customer/dashboard';
                   navigate(path);
@@ -106,7 +106,7 @@ const Header = () => {
           ) : (
             <>
               {!isLoginPage && (
-                <button 
+                <button
                   onClick={() => navigate('/login')}
                   style={{
                     background: 'transparent',
@@ -126,7 +126,7 @@ const Header = () => {
                 </button>
               )}
               {!isSignupPage && (
-                <button 
+                <button
                   onClick={() => navigate('/signup')}
                   style={{
                     background: 'var(--accent-gradient)',
