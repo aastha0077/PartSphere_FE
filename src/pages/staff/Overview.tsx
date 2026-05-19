@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  ShoppingBag, 
-  Users, 
-  CreditCard, 
+import {
+  ShoppingBag,
+  Users,
+  CreditCard,
   AlertTriangle,
   Calendar,
   TrendingUp,
@@ -17,8 +17,14 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { toast } from 'sonner';
 
+const parseUTCDate = (dateStr: string | undefined | null): Date => {
+  if (!dateStr) return new Date();
+  const hasTimezone = dateStr.includes('Z') || (dateStr.includes('T') && (dateStr.includes('+') || dateStr.slice(dateStr.indexOf('T')).includes('-')));
+  return new Date(hasTimezone ? dateStr : dateStr + 'Z');
+};
+
 const StatCard = ({ title, value, icon, color, delay }: any) => (
-  <motion.div 
+  <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay }}
@@ -30,15 +36,15 @@ const StatCard = ({ title, value, icon, color, delay }: any) => (
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem' }}>{title}</p>
         <h3 style={{ fontSize: '1.75rem', fontWeight: '800' }}>{value}</h3>
       </div>
-      <div style={{ 
-        width: '50px', 
-        height: '50px', 
-        background: `${color}15`, 
-        color: color, 
-        borderRadius: '12px', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center' 
+      <div style={{
+        width: '50px',
+        height: '50px',
+        background: `${color}15`,
+        color: color,
+        borderRadius: '12px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
       }}>
         {icon}
       </div>
@@ -86,7 +92,7 @@ const StaffOverview = () => {
     }
   };
 
-  const pendingAppointments = appointments.filter((a: any) => a.status === 'Pending');
+  const pendingAppointments = appointments.filter((a: any) => a.status === 'Pending' || a.status === 'Booked');
 
   if (loading) return <div className="h-[60vh] flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-emerald-500"></div></div>;
 
@@ -107,7 +113,7 @@ const StaffOverview = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column (Operational Queue): spans 2 columns */}
         <div className="lg:col-span-2 flex flex-col gap-6">
-          
+
           {/* Pending Customer Appointments */}
           <div className="glass-card">
             <div className="flex justify-between items-center mb-6">
@@ -121,7 +127,8 @@ const StaffOverview = () => {
             <div className="space-y-3">
               {pendingAppointments.length > 0 ? (
                 pendingAppointments.map((app: any) => {
-                  const appDate = new Date(app.appointmentDate || app.date);
+                  const dateStr = app.date || app.appointmentDate;
+                  const appDate = parseUTCDate(dateStr);
                   return (
                     <div key={app.id} className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-white/5 border border-white/5 rounded-xl gap-4 hover:border-blue-500/30 transition-all">
                       <div className="flex items-center gap-4 flex-1">
@@ -133,7 +140,7 @@ const StaffOverview = () => {
                             {appDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                           </p>
                         </div>
-                        
+
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <h4 className="font-bold text-white text-base">{app.customerName}</h4>
@@ -142,23 +149,23 @@ const StaffOverview = () => {
                             </span>
                           </div>
                           <p className="text-xs text-gray-400 mt-1">{app.vehicleInfo}</p>
-                          {app.notes && (
+                          {(app.description || app.notes) && (
                             <p className="text-xs text-gray-500 mt-1 italic">
-                              &ldquo;{app.notes}&rdquo;
+                              &ldquo;{app.description || app.notes}&rdquo;
                             </p>
                           )}
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2 self-end md:self-center">
-                        <button 
-                          onClick={() => updateAppointmentStatus(app.id, 'Completed')} 
+                        <button
+                          onClick={() => updateAppointmentStatus(app.id, 'Completed')}
                           className="px-3 py-1.5 bg-emerald-500/15 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-500/25 rounded-lg text-xs font-bold transition-all flex items-center gap-1"
                         >
                           <CheckCircle2 size={14} /> Complete
                         </button>
-                        <button 
-                          onClick={() => updateAppointmentStatus(app.id, 'Cancelled')} 
+                        <button
+                          onClick={() => updateAppointmentStatus(app.id, 'Cancelled')}
                           className="px-3 py-1.5 bg-red-500/15 text-red-500 border border-red-500/20 hover:bg-red-500/25 rounded-lg text-xs font-bold transition-all flex items-center gap-1"
                         >
                           <XCircle size={14} /> Cancel
@@ -211,7 +218,7 @@ const StaffOverview = () => {
 
         {/* Right Column (Control Panel): spans 1 column */}
         <div className="lg:col-span-1 flex flex-col gap-6">
-          
+
           {/* Quick Actions */}
           <div className="glass-card">
             <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
