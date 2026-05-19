@@ -152,34 +152,36 @@ const CustomerBooking = () => {
       return;
     }
 
-    try {
-      const userRes = await api.get('/auth/me');
-      const customerId = userRes.data.customerId;
+    setStep(4); // Show processing
 
-      const [time, modifier] = formData.timeSlot.split(' ');
-      let [hours, minutes] = time.split(':').map(Number);
-      if (modifier === 'PM' && hours < 12) hours += 12;
-      if (modifier === 'AM' && hours === 12) hours = 0;
+    setTimeout(async () => {
+      try {
+        const userRes = await api.get('/auth/me');
+        const customerId = userRes.data.customerId;
 
-      const bookingDate = new Date(selectedDate);
-      bookingDate.setHours(hours, minutes, 0, 0);
+        const [time, modifier] = formData.timeSlot.split(' ');
+        let [hours, minutes] = time.split(':').map(Number);
+        if (modifier === 'PM' && hours < 12) hours += 12;
+        if (modifier === 'AM' && hours === 12) hours = 0;
 
-      await api.post('/customer/appointments', {
-        customerId,
-        vehicleId: parseInt(formData.vehicleId),
-        serviceType: formData.serviceType,
-        date: bookingDate.toISOString(),
-        description: formData.description || 'Service request'
-      });
-      
-      toast.success('Appointment requested!');
-      setIsModalOpen(false);
-      setStep(1);
-      setFormData({ ...formData, description: '' });
-      fetchData();
-    } catch (err) {
-      toastApiError(err, { context: 'booking', fallback: 'Could not book the appointment. Please try again.' });
-    }
+        const bookingDate = new Date(selectedDate);
+        bookingDate.setHours(hours, minutes, 0, 0);
+
+        await api.post('/customer/appointments', {
+          customerId,
+          vehicleId: parseInt(formData.vehicleId),
+          serviceType: formData.serviceType,
+          date: bookingDate.toISOString(),
+          description: formData.description || 'Service request'
+        });
+        
+        setStep(5); // Show success
+        fetchData();
+      } catch (err) {
+        toastApiError(err, { context: 'booking', fallback: 'Could not book the appointment. Please try again.' });
+        setStep(3);
+      }
+    }, 2000);
   };
 
   const dayAppointments = appointments.filter(a => {
@@ -418,9 +420,32 @@ const CustomerBooking = () => {
                   <textarea placeholder="Optional notes for the mechanic..." value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} style={{ width: '100%', padding: '10px', background: 'var(--bg-tertiary)', border: '1px solid var(--glass-border)', borderRadius: '10px', color: 'white', minHeight: '80px', fontSize: '0.85rem' }} />
                   <div style={{ display: 'flex', gap: '0.75rem' }}>
                     <button onClick={() => setStep(2)} style={{ flex: 1, padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', color: 'white' }}>Back</button>
-                    <button onClick={handleBooking} style={{ flex: 2, padding: '12px', background: 'var(--accent-gradient)', borderRadius: '10px', color: 'white', fontWeight: '800' }}>Book Now</button>
+                    <button onClick={handleBooking} style={{ flex: 2, padding: '12px', background: 'var(--accent-gradient)', borderRadius: '10px', color: 'white', fontWeight: '800' }}>Confirm Appointment</button>
                   </div>
                 </div>
+              </motion.div>
+            )}
+
+            {step === 4 && (
+              <motion.div key="s4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-10 text-center">
+                <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }} style={{ marginBottom: '1.5rem' }}>
+                  <div style={{ width: '50px', height: '50px', border: '3px solid rgba(99, 102, 241, 0.2)', borderTopColor: 'var(--accent-primary)', borderRadius: '50%' }} />
+                </motion.div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.5rem' }}>Securing Booking...</h3>
+                <p style={{ color: 'var(--text-muted)' }}>Validating vehicle slot and mechanic availability.</p>
+              </motion.div>
+            )}
+
+            {step === 5 && (
+              <motion.div key="s5" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center justify-center py-6 text-center">
+                <div style={{ width: '64px', height: '64px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', marginBottom: '1.25rem' }}>
+                  <CheckCircle2 size={32} />
+                </div>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.5rem' }}>Booking Confirmed!</h3>
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Your {formData.serviceType} appointment is set for {selectedDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} at {formData.timeSlot}.</p>
+                <button onClick={() => { setIsModalOpen(false); setStep(1); setFormData({ ...formData, description: '' }); }} style={{ padding: '12px 32px', background: 'var(--accent-gradient)', borderRadius: '10px', color: 'white', fontWeight: '700' }}>
+                  Return to Dashboard
+                </button>
               </motion.div>
             )}
           </AnimatePresence>

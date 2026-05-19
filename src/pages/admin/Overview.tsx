@@ -11,7 +11,8 @@ import {
   DollarSign,
   PlusCircle,
   FileText,
-  Settings
+  Settings,
+  Star
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
@@ -114,13 +115,18 @@ const QuickAction = ({ icon, label, onClick, color }: any) => (
 const Overview = () => {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [reviews, setReviews] = useState<any[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await api.get('/admin/reports/financial-summary');
-        setStats(res.data);
+        const [statsRes, reviewsRes] = await Promise.all([
+          api.get('/admin/reports/financial-summary'),
+          api.get('/public/reviews').catch(() => ({ data: [] }))
+        ]);
+        setStats(statsRes.data);
+        setReviews(reviewsRes.data.slice(0, 4));
       } catch (err: unknown) {
         console.error('Failed to fetch dashboard stats');
       } finally {
@@ -335,24 +341,32 @@ const Overview = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.7 }}
             className="glass-card"
-            style={{ flex: 1, background: 'var(--accent-gradient)', border: 'none' }}
+            style={{ flex: 1 }}
           >
-            <div style={{ color: 'white' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
-                <Activity size={20} />
-                <h3 style={{ fontWeight: '700' }}>System Health</h3>
-              </div>
-              <p style={{ fontSize: '0.875rem', opacity: 0.9, marginBottom: '1.5rem' }}>All systems are operational. Last sync 2 mins ago.</p>
-              <div style={{ height: '4px', background: 'rgba(255,255,255,0.2)', borderRadius: '2px', overflow: 'hidden' }}>
-                <motion.div 
-                  initial={{ width: 0 }}
-                  animate={{ width: '100%' }}
-                  transition={{ duration: 2 }}
-                  style={{ height: '100%', background: 'white' }} 
-                />
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.25rem' }}>
+              <Star size={20} className="text-amber-500" />
+              <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>Recent Reviews</h3>
             </div>
+            
+            {reviews.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No reviews available yet.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {reviews.map((r, i) => (
+                  <div key={i} style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                      <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{r.customerName}</span>
+                      <div style={{ display: 'flex', color: '#fbbf24' }}>
+                        {[...Array(r.rating)].map((_, j) => <Star key={j} size={12} fill="currentColor" />)}
+                      </div>
+                    </div>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontStyle: 'italic', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>"{r.comment}"</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </motion.div>
+
         </div>
       </div>
     </div>

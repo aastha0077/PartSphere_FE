@@ -43,7 +43,8 @@ const AdminCustomers = () => {
     name: '',
     phone: '',
     email: '',
-    address: ''
+    address: '',
+    password: ''
   });
   const [selectedHistory, setSelectedHistory] = useState<CustomerHistory | null>(null);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
@@ -100,7 +101,7 @@ const AdminCustomers = () => {
       }
       setIsModalOpen(false);
       setEditingId(null);
-      setFormData({ name: '', phone: '', email: '', address: '' });
+      setFormData({ name: '', phone: '', email: '', address: '', password: '' });
       fetchCustomers();
     } catch (err) {
       toastApiError(err, { context: 'save', fallback: 'Could not save customer details.' });
@@ -134,7 +135,8 @@ const AdminCustomers = () => {
       name: customer.name,
       phone: customer.phone,
       email: customer.email || '',
-      address: customer.address || ''
+      address: customer.address || '',
+      password: ''
     });
     setIsModalOpen(true);
   };
@@ -162,7 +164,7 @@ const AdminCustomers = () => {
           </p>
         </div>
         <button 
-          onClick={() => { setEditingId(null); setFormData({ name: '', phone: '', email: '', address: '' }); setIsModalOpen(true); }}
+          onClick={() => { setEditingId(null); setFormData({ name: '', phone: '', email: '', address: '', password: '' }); setIsModalOpen(true); }}
           style={{ 
             padding: '12px 24px', 
             background: 'var(--accent-gradient)', 
@@ -425,6 +427,18 @@ const AdminCustomers = () => {
               style={{ width: '100%', padding: '12px', background: 'var(--bg-tertiary)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white', minHeight: '100px' }} 
             />
           </div>
+          {!editingId && (
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Portal Password (Optional)</label>
+              <input 
+                type="password"
+                placeholder="Secure password for portal access"
+                value={formData.password} 
+                onChange={e => setFormData({...formData, password: e.target.value})} 
+                style={{ width: '100%', padding: '12px', background: 'var(--bg-tertiary)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }} 
+              />
+            </div>
+          )}
           <button type="submit" style={{ padding: '14px', background: 'var(--accent-gradient)', borderRadius: '10px', color: 'white', fontWeight: '700', marginTop: '1rem', boxShadow: '0 10px 20px -10px rgba(99, 102, 241, 0.5)' }}>
             {editingId ? "Save Changes" : "Create Account"}
           </button>

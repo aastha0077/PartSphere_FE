@@ -26,7 +26,7 @@ const StaffLayout = () => {
     { to: '/staff/appointments', icon: <Calendar size={20} />, label: 'Appointments' },
     { to: '/staff/part-requests', icon: <AlertCircle size={20} />, label: 'Part Inquiries' },
     { to: '/staff/credits', icon: <CreditCard size={20} />, label: 'Credit Payments' },
-    { to: '/staff/reports', icon: <FileText size={20} />, label: 'Customer Insights' },
+    { to: '/staff/reports', icon: <FileText size={20} />, label: 'Customer Reports' },
   ];
 
   return (
