@@ -51,6 +51,7 @@ const Customers = () => {
     email: '',
     phone: '',
     address: '',
+    password: '',
     vehicleNumber: '',
     brand: '',
     model: '',
@@ -106,7 +107,7 @@ const Customers = () => {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', email: '', phone: '', address: '', vehicleNumber: '', brand: '', model: '', mileage: 0 });
+    setFormData({ name: '', email: '', phone: '', address: '', password: '', vehicleNumber: '', brand: '', model: '', mileage: 0 });
     setEditingId(null);
     setIncludeVehicle(true);
   };
@@ -119,6 +120,7 @@ const Customers = () => {
       email: customer.email || '',
       phone: customer.phone || '',
       address: customer.address || '',
+      password: '',
       vehicleNumber: '',
       brand: '',
       model: '',
@@ -143,7 +145,8 @@ const Customers = () => {
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
-          address: formData.address
+          address: formData.address,
+          password: formData.password
         };
         if (includeVehicle && formData.vehicleNumber.trim()) {
           payload.vehicle = {
@@ -456,7 +459,11 @@ const Customers = () => {
 
           {!editingId && (
             <>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+              <div>
+                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Portal Password (Optional)</label>
+                 <input type="password" placeholder="Create a secure password for portal access" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} className="glass" style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid var(--glass-border)', color: 'white' }} />
+              </div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)', cursor: 'pointer', marginTop: '0.5rem' }}>
                 <input type="checkbox" checked={includeVehicle} onChange={e => setIncludeVehicle(e.target.checked)} />
                 Register vehicle with customer
               </label>

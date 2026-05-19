@@ -10,7 +10,8 @@ import {
   Package,
   CheckCircle2,
   Clock,
-  XCircle
+  XCircle,
+  Star
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
@@ -49,17 +50,20 @@ const StaffOverview = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [appointments, setAppointments] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
   const navigate = useNavigate();
 
   const fetchData = async () => {
     try {
-      const [dashRes, reportRes, aptRes] = await Promise.all([
+      const [dashRes, reportRes, aptRes, reviewsRes] = await Promise.all([
         api.get('/staff/reports/dashboard-summary'),
         api.get('/staff/reports/customer-reports'),
-        api.get('/staff/appointments')
+        api.get('/staff/appointments'),
+        api.get('/public/reviews').catch(() => ({ data: [] }))
       ]);
       setData({ ...dashRes.data, ...reportRes.data });
       setAppointments(aptRes.data);
+      setReviews(reviewsRes.data.slice(0, 4));
     } catch (err) {
       console.error('Failed to fetch staff dashboard data');
     } finally {
@@ -245,6 +249,30 @@ const StaffOverview = () => {
                 </div>
               ))}
               {(!data?.pendingCredits || data.pendingCredits.length === 0) && <p className="text-gray-500 text-center py-4">No pending credits.</p>}
+            </div>
+          </div>
+
+          {/* Recent Reviews List */}
+          <div className="glass-card">
+            <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+              <Star size={20} className="text-amber-500" /> Recent Service Reviews
+            </h3>
+            <div className="flex flex-col gap-3">
+              {reviews.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">No reviews yet.</p>
+              ) : (
+                reviews.map((r, i) => (
+                  <div key={i} className="p-4 bg-white/5 border border-white/10 rounded-xl">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-sm font-bold">{r.customerName}</span>
+                      <div className="flex text-amber-500">
+                        {[...Array(r.rating)].map((_, j) => <Star key={j} size={12} fill="currentColor" />)}
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-400 italic line-clamp-2">"{r.comment}"</p>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 

@@ -11,7 +11,7 @@ const CustomerPortal = () => {
   const [parts, setParts] = useState<VehiclePart[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [suggestions, setSuggestions] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'catalog' | 'history' | 'appointments' | 'requests' | 'reviews'>('catalog');
+  const [activeTab, setActiveTab] = useState<'catalog' | 'history' | 'appointments' | 'requests' | 'reviews' | 'credits'>('catalog');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
@@ -57,6 +57,10 @@ const CustomerPortal = () => {
     description: ''
   });
   const [appointments, setAppointments] = useState<any[]>([]);
+  const [credits, setCredits] = useState<any[]>([]);
+  const [activeCreditPayment, setActiveCreditPayment] = useState<any>(null);
+  const [creditPaymentStep, setCreditPaymentStep] = useState<'details' | 'processing' | 'success'>('details');
+  const [creditCardInfo, setCreditCardInfo] = useState({ number: '', expiry: '', cvc: '', name: '' });
   const [cart, setCart] = useState<any[]>(() => {
     const saved = localStorage.getItem('partsphere_cart');
     return saved ? JSON.parse(saved) : [];
@@ -86,21 +90,22 @@ const CustomerPortal = () => {
     }
   }, [isCartOpen]);
 
-  useEffect(() => {
-    const fetchPortalData = async () => {
+  const fetchPortalData = async () => {
     try {
-      const [partsRes, historyRes, requestsRes, appointmentsRes, vehiclesRes] = await Promise.allSettled([
+      const [partsRes, historyRes, requestsRes, appointmentsRes, vehiclesRes, creditsRes] = await Promise.allSettled([
         api.get('/customer/parts'),
         api.get('/customer/history'),
         api.get('/customer/part-requests'),
         api.get('/customer/appointments'),
-        api.get('/vehicle/my-vehicles')
+        api.get('/vehicle/my-vehicles'),
+        api.get('/customer/credits')
       ]);
 
       if (partsRes.status === 'fulfilled') setParts(partsRes.value.data.items || partsRes.value.data);
       if (historyRes.status === 'fulfilled') setHistory(historyRes.value.data);
       if (requestsRes.status === 'fulfilled') setRequests(requestsRes.value.data);
       if (appointmentsRes.status === 'fulfilled') setAppointments(appointmentsRes.value.data);
+      if (creditsRes.status === 'fulfilled') setCredits(creditsRes.value.data);
 
       if (vehiclesRes.status === 'fulfilled' && Array.isArray(vehiclesRes.value.data) && vehiclesRes.value.data.length > 0) {
         setMyVehicles(vehiclesRes.value.data);
@@ -116,8 +121,37 @@ const CustomerPortal = () => {
       // toast.error('Some data could not be loaded');
     }
   };
+
+  useEffect(() => {
     fetchPortalData();
   }, []);
+
+  const handlePayCreditInit = (credit: any) => {
+    setActiveCreditPayment(credit);
+    setCreditPaymentStep('details');
+    setCreditCardInfo({ number: '', expiry: '', cvc: '', name: '' });
+  };
+
+  const handleProcessCreditPayment = async () => {
+    if (!creditCardInfo.number || !creditCardInfo.expiry || !creditCardInfo.cvc || !creditCardInfo.name) {
+      toastValidationError("Please fill in all card details to proceed.");
+      return;
+    }
+    setCreditPaymentStep('processing');
+    
+    // Simulate real-world gateway latency
+    setTimeout(async () => {
+      try {
+        await api.post(`/customer/credits/${activeCreditPayment.id}/pay`);
+        const res = await api.get('/customer/credits');
+        setCredits(res.data);
+        setCreditPaymentStep('success');
+      } catch (err: unknown) {
+        toastApiError(err, { fallback: "Failed to process payment" });
+        setCreditPaymentStep('details');
+      }
+    }, 2000);
+  };
 
   useEffect(() => {
     if (selectedVehicleId == null) return;
@@ -326,6 +360,14 @@ const CustomerPortal = () => {
             </button>
             <button onClick={() => setActiveTab('reviews')} style={{ padding: '1rem 0', color: activeTab === 'reviews' ? 'var(--accent-primary)' : 'var(--text-secondary)', borderBottom: activeTab === 'reviews' ? '2px solid var(--accent-primary)' : 'none', background: 'transparent', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Sparkles size={20} /> Service Reviews
+            </button>
+            <button onClick={() => setActiveTab('credits')} style={{ padding: '1rem 0', color: activeTab === 'credits' ? '#f59e0b' : 'var(--text-secondary)', borderBottom: activeTab === 'credits' ? '2px solid #f59e0b' : 'none', background: 'transparent', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <CreditCard size={20} /> Pending Dues
+              {credits.filter(c => c.status !== 'Paid').length > 0 && (
+                <span style={{ background: '#ef4444', color: 'white', padding: '2px 6px', borderRadius: '10px', fontSize: '0.7rem' }}>
+                  {credits.filter(c => c.status !== 'Paid').length}
+                </span>
+              )}
             </button>
           </div>
 
@@ -584,6 +626,52 @@ const CustomerPortal = () => {
         {activeTab === 'reviews' && (
           <div className="glass-card">
             <CustomerReviews />
+          </div>
+        )}
+
+        {activeTab === 'credits' && (
+          <div className="animate-fade-in">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+              <h2 className="text-2xl font-bold">Pending Dues & Credits</h2>
+            </div>
+            
+            {credits.length === 0 ? (
+              <div className="glass-card" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+                <CheckCircle size={48} className="text-emerald-500" style={{ margin: '0 auto 1rem', opacity: 0.8 }} />
+                <h3 className="text-xl font-bold mb-2">All Clear!</h3>
+                <p className="text-gray-400">You don't have any outstanding dues or pending credit payments.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {credits.map((credit: any) => (
+                  <div key={credit.id} className="glass-card" style={{ border: credit.status !== 'Paid' ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: credit.status !== 'Paid' ? '#f59e0b' : '#10b981' }}></div>
+                    <div className="flex justify-between items-start mb-4 pl-3">
+                      <div>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: credit.status !== 'Paid' ? '#f59e0b' : '#10b981', background: credit.status !== 'Paid' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)', padding: '4px 8px', borderRadius: '4px', marginBottom: '8px', display: 'inline-block' }}>
+                          {credit.status}
+                        </span>
+                        <h4 className="font-bold text-lg text-white">Invoice #{credit.salesInvoiceId}</h4>
+                        <p className="text-xs text-gray-500">Due by {new Date(credit.dueDate).toLocaleDateString()}</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xl font-black text-white">Rs. {credit.dueAmount.toLocaleString()}</div>
+                      </div>
+                    </div>
+                    {credit.status !== 'Paid' && (
+                      <div className="pl-3 mt-4">
+                        <button 
+                          onClick={() => handlePayCreditInit(credit)}
+                          className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-2"
+                        >
+                          <CreditCard size={18} /> Pay Now
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div> {/* Close tab-content */}
@@ -1074,6 +1162,70 @@ const CustomerPortal = () => {
               </div>
               <button onClick={() => setIsCartOpen(false)} style={{ width: '100%', padding: '14px', background: 'var(--accent-primary)', color: 'white', fontWeight: '800', borderRadius: '12px' }}>
                 Close & Return to Portal
+              </button>
+            </div>
+          )}
+        </div>
+      </Modal>
+      {/* Pending Due Payment Modal */}
+      <Modal isOpen={!!activeCreditPayment} onClose={() => setActiveCreditPayment(null)} title="Settle Pending Due">
+        <div style={{ minHeight: '350px', display: 'flex', flexDirection: 'column' }}>
+          {creditPaymentStep === 'details' && (
+            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '1rem', borderRadius: '12px' }}>
+                <p style={{ color: '#fbbf24', fontSize: '0.85rem', fontWeight: '800', marginBottom: '4px' }}>PAYMENT AMOUNT</p>
+                <p style={{ fontSize: '1.5rem', fontWeight: '900', color: 'white' }}>Rs. {activeCreditPayment?.dueAmount?.toLocaleString()}</p>
+              </div>
+              
+              <div className="glass" style={{ padding: '20px', borderRadius: '16px', background: 'linear-gradient(135deg, #1e1e2f 0%, #111119 100%)', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '100px', height: '100px', background: 'var(--accent-primary)', opacity: 0.1, borderRadius: '50%' }} />
+                <CreditCard size={32} style={{ marginBottom: '1.5rem', opacity: 0.5 }} />
+                <div style={{ fontSize: '1.1rem', letterSpacing: '2px', fontWeight: 'bold', marginBottom: '1.5rem', color: 'rgba(255,255,255,0.8)' }}>
+                  {creditCardInfo.number || 'XXXX XXXX XXXX XXXX'}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.7rem', opacity: 0.5 }}>CARD HOLDER</span>
+                  <span style={{ fontSize: '0.7rem', opacity: 0.5 }}>EXPIRES</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: '600' }}>{creditCardInfo.name || 'CUSTOMER NAME'}</span>
+                  <span style={{ fontSize: '0.8rem', fontWeight: '600' }}>{creditCardInfo.expiry || 'MM/YY'}</span>
+                </div>
+              </div>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
+                <input placeholder="Cardholder Name" value={creditCardInfo.name} onChange={e => setCreditCardInfo({...creditCardInfo, name: e.target.value})} className="glass" style={{ width: '100%', padding: '12px', borderRadius: '10px', color: 'white' }} />
+                <input placeholder="Card Number" value={creditCardInfo.number} onChange={e => setCreditCardInfo({...creditCardInfo, number: e.target.value})} className="glass" style={{ width: '100%', padding: '12px', borderRadius: '10px', color: 'white' }} />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <input placeholder="MM/YY" value={creditCardInfo.expiry} onChange={e => setCreditCardInfo({...creditCardInfo, expiry: e.target.value})} className="glass" style={{ width: '100%', padding: '12px', borderRadius: '10px', color: 'white' }} />
+                  <input placeholder="CVC" type="password" maxLength={4} value={creditCardInfo.cvc} onChange={e => setCreditCardInfo({...creditCardInfo, cvc: e.target.value})} className="glass" style={{ width: '100%', padding: '12px', borderRadius: '10px', color: 'white' }} />
+                </div>
+              </div>
+              <button onClick={handleProcessCreditPayment} className="glass" style={{ width: '100%', padding: '14px', background: 'linear-gradient(to right, #f59e0b, #ef4444)', color: 'white', fontWeight: '800', borderRadius: '12px', marginTop: '0.5rem' }}>
+                Process Payment
+              </button>
+            </div>
+          )}
+
+          {creditPaymentStep === 'processing' && (
+            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, padding: '2rem' }}>
+              <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }} style={{ marginBottom: '2rem' }}>
+                <div style={{ width: '60px', height: '60px', border: '4px solid rgba(245, 158, 11, 0.2)', borderTopColor: '#f59e0b', borderRadius: '50%' }} />
+              </motion.div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.5rem' }}>Processing Payment...</h3>
+              <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>Connecting to secure gateway. Please do not close this window.</p>
+            </div>
+          )}
+
+          {creditPaymentStep === 'success' && (
+            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, padding: '2rem' }}>
+              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring' }} style={{ width: '80px', height: '80px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', marginBottom: '1.5rem' }}>
+                <CheckCircle2 size={40} />
+              </motion.div>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.5rem' }}>Payment Successful!</h3>
+              <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '2rem' }}>Your outstanding due has been settled and cleared from your account.</p>
+              <button onClick={() => setActiveCreditPayment(null)} className="glass" style={{ padding: '12px 32px', background: 'var(--accent-gradient)', color: 'white', fontWeight: '700', borderRadius: '10px' }}>
+                Close Window
               </button>
             </div>
           )}

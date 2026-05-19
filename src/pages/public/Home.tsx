@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import { 
   ShieldCheck, 
   Package, 
@@ -10,11 +11,19 @@ import {
   Settings,
   Truck,
   CheckCircle2,
-  Wrench
+  Wrench,
+  Star
 } from 'lucide-react';
 
 const Home = () => {
   const navigate = useNavigate();
+  const [reviews, setReviews] = useState<any[]>([]);
+
+  useEffect(() => {
+    api.get('/public/reviews')
+      .then(res => setReviews(res.data.filter((r: any) => r.rating >= 4).slice(0, 3)))
+      .catch(console.error);
+  }, []);
 
   const features = [
     {
@@ -201,6 +210,40 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      {/* Testimonials Section */}
+      {reviews.length > 0 && (
+        <section style={{ padding: '80px 2rem', background: 'var(--bg-primary)' }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
+              <h2 style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Customer <span className="text-gradient">Testimonials</span></h2>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>See what our clients say about our service.</p>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+              {reviews.map((review, i) => (
+                <div key={i} className="glass-card" style={{ padding: '2.5rem', position: 'relative' }}>
+                  <div style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', color: '#fbbf24' }}>
+                    {[...Array(review.rating)].map((_, j) => <Star key={j} size={20} fill="currentColor" />)}
+                  </div>
+                  <p style={{ fontSize: '1.1rem', lineHeight: 1.6, marginBottom: '2rem', fontStyle: 'italic', color: 'var(--text-secondary)' }}>
+                    "{review.comment}"
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '40px', height: '40px', background: 'var(--accent-gradient)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800' }}>
+                      {review.customerName[0]}
+                    </div>
+                    <div>
+                      <h4 style={{ fontWeight: '700' }}>{review.customerName}</h4>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Verified Client</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* CTA Section */}
       <section style={{ padding: '100px 2rem' }}>

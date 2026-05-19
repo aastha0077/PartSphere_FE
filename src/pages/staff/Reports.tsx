@@ -16,6 +16,8 @@ import { motion } from 'framer-motion';
 import api from '../../services/api';
 import { toast } from 'sonner';
 import { toastApiError, toastValidationError } from '../../utils/feedback';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const StaffReports = () => {
   const [loading, setLoading] = useState(true);
@@ -50,11 +52,110 @@ const StaffReports = () => {
     show: { opacity: 1, y: 0 }
   };
 
+  const exportToPDF = () => {
+    try {
+      toast.loading("Generating PDF Customer Reports...");
+      const doc = new jsPDF();
+
+      // Title & Header
+      doc.setFontSize(22);
+      doc.setTextColor(16, 185, 129); // Emerald color matching the staff reports UI
+      doc.text("PartSphere Customer Reports", 14, 22);
+
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
+      doc.text("Scope: Regulars, High Spenders, and Outstanding Credits", 14, 35);
+
+      let currentY = 45;
+
+      // 1. High Value Customers Table
+      doc.setFontSize(14);
+      doc.setTextColor(0);
+      doc.text("1. High Value Customers (Top Spenders)", 14, currentY);
+      
+      const topSpendersData = data?.topSpenders?.map((c: any) => [
+        c.customerName,
+        `#${c.customerId}`,
+        `${c.orderCount} orders`,
+        `Rs. ${c.totalSpent.toLocaleString()}`
+      ]) || [];
+
+      autoTable(doc, {
+        startY: currentY + 5,
+        head: [['Customer Name', 'Customer ID', 'Transactions', 'Lifetime Value']],
+        body: topSpendersData,
+        theme: 'striped',
+        headStyles: { fillColor: [16, 185, 129] } // Emerald header
+      });
+
+      currentY = (doc as any).lastAutoTable.finalY + 15;
+
+      // 2. Frequent Visitors Table
+      doc.setFontSize(14);
+      doc.setTextColor(0);
+      doc.text("2. Frequent Visitors (Loyal Customers)", 14, currentY);
+
+      const frequentCustomersData = data?.frequentCustomers?.map((c: any) => [
+        c.customerName,
+        `#${c.customerId}`,
+        `${c.visitCount} visits`,
+        new Date(c.lastVisit).toLocaleDateString()
+      ]) || [];
+
+      autoTable(doc, {
+        startY: currentY + 5,
+        head: [['Customer Name', 'Customer ID', 'Visits Count', 'Last Visit']],
+        body: frequentCustomersData,
+        theme: 'striped',
+        headStyles: { fillColor: [59, 130, 246] } // Blue header
+      });
+
+      currentY = (doc as any).lastAutoTable.finalY + 15;
+
+      // 3. Pending Credits Table
+      doc.setFontSize(14);
+      doc.setTextColor(0);
+      doc.text("3. Pending Credit Exposures", 14, currentY);
+
+      const pendingCreditsData = data?.pendingCredits?.map((c: any) => [
+        `Invoice #${c.salesInvoiceId}`,
+        c.customerName,
+        `#${c.customerId}`,
+        `Rs. ${c.dueAmount.toLocaleString()}`,
+        new Date(c.dueDate).toLocaleDateString(),
+        c.status
+      ]) || [];
+
+      if (pendingCreditsData.length > 0) {
+        autoTable(doc, {
+          startY: currentY + 5,
+          head: [['Invoice ID', 'Customer Name', 'Customer ID', 'Due Amount', 'Due Date', 'Status']],
+          body: pendingCreditsData,
+          theme: 'striped',
+          headStyles: { fillColor: [245, 158, 11] } // Amber header
+        });
+      } else {
+        doc.setFontSize(10);
+        doc.setTextColor(120);
+        doc.text("No outstanding customer credits found in the ledger.", 14, currentY + 8);
+      }
+
+      doc.save(`PartSphere_Customer_Reports_${new Date().toISOString().split('T')[0]}.pdf`);
+      toast.dismiss();
+      toast.success("PDF Customer report exported successfully!");
+    } catch (err) {
+      toast.dismiss();
+      toast.error("Could not export the PDF report.");
+      console.error(err);
+    }
+  };
+
   const exportToCSV = () => {
     try {
-      toast.loading("Generating customer insights report...");
+      toast.loading("Generating customer reports...");
       const csvRows = [
-        "Customer Insights Report - PartSphere",
+        "Customer Reports - PartSphere",
         `Generated Date,${new Date().toLocaleString()}`,
         "",
         "HIGH VALUE CUSTOMERS (TOP SPENDERS)",
@@ -87,12 +188,12 @@ const StaffReports = () => {
       
       const link = document.createElement("a");
       link.setAttribute("href", url);
-      link.setAttribute("download", `Customer_Insights_Report_${new Date().toISOString().split('T')[0]}.csv`);
+      link.setAttribute("download", `Customer_Reports_${new Date().toISOString().split('T')[0]}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       toast.dismiss();
-      toast.success("Insights report exported successfully!");
+      toast.success("Customer report exported successfully!");
     } catch (err) {
       toast.dismiss();
       toast.error("Could not export the report.");
@@ -112,7 +213,7 @@ const StaffReports = () => {
       <div className="flex justify-between items-end mb-8">
         <div>
           <h1 className="text-4xl font-extrabold mb-2 tracking-tight">
-            Customer <span className="text-emerald-500">Insights</span>
+            Customer <span className="text-emerald-500">Reports</span>
           </h1>
           <p className="text-gray-400 text-lg">
             Strategic analytics for customer retention and financial health.
@@ -120,10 +221,16 @@ const StaffReports = () => {
         </div>
         <div className="flex gap-3">
           <button 
-            onClick={exportToCSV}
+            onClick={exportToPDF}
             className="flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all font-bold shadow-lg shadow-emerald-500/20"
           >
-            <Download size={18} /> Export Insights
+            <Download size={18} /> Export PDF Report
+          </button>
+          <button 
+            onClick={exportToCSV}
+            className="flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all font-bold text-gray-300"
+          >
+            <Download size={18} /> Export CSV
           </button>
           <button 
             onClick={fetchReports}
