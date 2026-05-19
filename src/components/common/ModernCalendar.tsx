@@ -8,6 +8,12 @@ interface CalendarProps {
   appointments: any[];
 }
 
+const parseUTCDate = (dateStr: string | undefined | null): Date => {
+  if (!dateStr) return new Date();
+  const hasTimezone = dateStr.includes('Z') || (dateStr.includes('T') && (dateStr.includes('+') || dateStr.slice(dateStr.indexOf('T')).includes('-')));
+  return new Date(hasTimezone ? dateStr : dateStr + 'Z');
+};
+
 const ModernCalendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, appointments }) => {
   const [viewDate, setViewDate] = useState(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
   const [direction, setDirection] = useState(0);
@@ -35,7 +41,9 @@ const ModernCalendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, a
 
   const getAppointmentsForDay = (day: number) => 
     appointments.filter(a => {
-      const d = new Date(a.date || a.appointmentDate);
+      const dateStr = a.date || a.appointmentDate;
+      if (!dateStr) return false;
+      const d = parseUTCDate(dateStr);
       return d.getDate() === day && d.getMonth() === viewDate.getMonth() && d.getFullYear() === viewDate.getFullYear();
     });
 
