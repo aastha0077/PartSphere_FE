@@ -217,8 +217,11 @@ const AdminCustomers = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                    Loading customer records...
+                  <td colSpan={6} style={{ padding: '3rem', textAlign: 'center' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <div className="animate-spin" style={{ width: '30px', height: '30px', border: '3px solid rgba(99, 102, 241, 0.1)', borderTop: '3px solid var(--accent-primary)', borderRadius: '50%' }} />
+                      <p style={{ marginTop: '1rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Loading customer records...</p>
+                    </div>
                   </td>
                 </tr>
               ) : filteredCustomers.length === 0 ? (

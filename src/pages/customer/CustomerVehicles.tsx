@@ -63,7 +63,10 @@ const CustomerVehicles = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
         {loading ? (
-          <p className="text-gray-500">Loading your garage...</p>
+          <div className="col-span-full flex flex-col items-center justify-center py-16">
+            <div className="animate-spin rounded-full h-10 w-10 border-2 border-indigo-500/20 border-t-indigo-500"></div>
+            <p className="text-gray-500 mt-4 text-sm font-medium">Loading your garage...</p>
+          </div>
         ) : vehicles.length === 0 ? (
           <div className="col-span-full text-center py-12 bg-[#0d0d12] border border-white/5 rounded-2xl">
             <Car size={48} className="text-gray-600 mx-auto mb-4" />

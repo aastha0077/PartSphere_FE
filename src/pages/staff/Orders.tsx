@@ -228,7 +228,10 @@ const Orders = () => {
         maxWidth="640px"
       >
         {detailLoading ? (
-          <p className="text-center py-8 text-gray-400">Loading order...</p>
+          <div className="flex flex-col items-center justify-center py-10">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500/20 border-t-indigo-500"></div>
+            <p className="text-gray-400 mt-3 text-sm">Loading order...</p>
+          </div>
         ) : selectedOrder ? (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3 text-sm">

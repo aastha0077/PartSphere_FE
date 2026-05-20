@@ -273,7 +273,12 @@ const CustomerBooking = () => {
                 </h3>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {dayAppointments.length === 0 ? (
+                  {loading ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2.5rem' }}>
+                      <div className="animate-spin" style={{ width: '28px', height: '28px', border: '2px solid rgba(99, 102, 241, 0.15)', borderTop: '2px solid var(--accent-primary)', borderRadius: '50%' }} />
+                      <p style={{ marginTop: '0.75rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>Loading schedule...</p>
+                    </div>
+                  ) : dayAppointments.length === 0 ? (
                     <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', padding: '2rem', border: '1px dashed rgba(255,255,255,0.05)', borderRadius: '12px' }}>
                       No services scheduled for this date.
                     </div>
@@ -347,7 +352,12 @@ const CustomerBooking = () => {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {sortedHistory.length === 0 ? (
+              {loading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4rem' }}>
+                  <div className="animate-spin" style={{ width: '36px', height: '36px', border: '3px solid rgba(99, 102, 241, 0.1)', borderTop: '3px solid var(--accent-primary)', borderRadius: '50%' }} />
+                  <p style={{ marginTop: '1.25rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Loading booking history...</p>
+                </div>
+              ) : sortedHistory.length === 0 ? (
                 <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>No previous bookings found.</div>
               ) : sortedHistory.map(apt => (
                 <div key={apt.id} className="table-row-hover" style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.01)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)', display: 'grid', gridTemplateColumns: '100px 1fr 1fr 120px', alignItems: 'center', gap: '1.5rem' }}>
@@ -486,7 +496,7 @@ const CustomerBooking = () => {
                   {/* Card Inputs */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     <input
-                      placeholder="Cardholder Name"
+                      placeholder="e.g. Ram Bahadur"
                       value={cardInfo.name}
                       onChange={e => setCardInfo({ ...cardInfo, name: e.target.value })}
                       className="glass"

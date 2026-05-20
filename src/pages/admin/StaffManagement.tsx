@@ -209,7 +209,12 @@ const StaffManagement = () => {
           <tbody>
             <AnimatePresence>
               {loading ? (
-                <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Synchronizing personnel records...</td></tr>
+                <tr><td colSpan={5} style={{ padding: '3rem', textAlign: 'center' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div className="animate-spin" style={{ width: '30px', height: '30px', border: '3px solid rgba(99, 102, 241, 0.1)', borderTop: '3px solid var(--accent-primary)', borderRadius: '50%' }} />
+                    <p style={{ marginTop: '1rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Synchronizing personnel records...</p>
+                  </div>
+                </td></tr>
               ) : filteredStaff.length === 0 ? (
                 <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>No personnel match your search.</td></tr>
               ) : pagedStaff.map((user, idx) => (
@@ -353,7 +358,7 @@ const StaffManagement = () => {
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Full Name</label>
             <input 
-              placeholder="e.g. Alexander Pierce" 
+              placeholder="e.g. Ram Bahadur" 
               value={formData.name} 
               onChange={e => { setFormData({...formData, name: e.target.value}); setFieldErrors((p) => ({ ...p, name: undefined })); }} 
               style={{ width: '100%', padding: '12px', background: 'var(--bg-tertiary)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }} 
@@ -364,7 +369,7 @@ const StaffManagement = () => {
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Email Address</label>
             <input 
-              placeholder="staff@partsphere.com" 
+              placeholder="ram.bahadur@partsphere.com" 
               type="email" 
               value={formData.email} 
               onChange={e => { setFormData({...formData, email: e.target.value}); setFieldErrors((p) => ({ ...p, email: undefined })); }} 

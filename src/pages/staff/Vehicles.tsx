@@ -153,7 +153,10 @@ const Vehicles = () => {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
         {loading ? (
-          <p style={{ color: 'var(--text-muted)' }}>Loading vehicles...</p>
+          <div className="col-span-full" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem' }}>
+            <div className="animate-spin" style={{ width: '36px', height: '36px', border: '3px solid rgba(16, 185, 129, 0.1)', borderTop: '3px solid #10b981', borderRadius: '50%' }} />
+            <p style={{ marginTop: '1.25rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Loading vehicles...</p>
+          </div>
         ) : vehicles.length === 0 ? (
           <p style={{ color: 'var(--text-muted)' }}>No vehicles found.</p>
         ) : vehicles.map(vehicle => (
@@ -192,23 +195,38 @@ const Vehicles = () => {
       <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingId(null); }} title={editingId ? 'Edit Vehicle' : 'Register Vehicle'}>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {!editingId && (
-          <select 
-            value={formData.customerId} 
-            onChange={e => setFormData({ ...formData, customerId: e.target.value })} 
-            className="glass" 
-            style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} 
-            required
-          >
-            <option value="">Select Owner (Customer)...</option>
-            {customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.phone})</option>)}
-          </select>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Owner (Customer) *</label>
+              <select 
+                value={formData.customerId} 
+                onChange={e => setFormData({ ...formData, customerId: e.target.value })} 
+                className="glass" 
+                style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} 
+                required
+              >
+                <option value="">Select Owner (Customer)...</option>
+                {customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.phone})</option>)}
+              </select>
+            </div>
           )}
           {!editingId && (
-          <input placeholder="License Plate / Vehicle Number" value={formData.vehicleNumber} onChange={e => setFormData({ ...formData, vehicleNumber: e.target.value })} className="glass" style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} required />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>License Plate / Vehicle Number *</label>
+              <input placeholder="e.g. AB-1234" value={formData.vehicleNumber} onChange={e => setFormData({ ...formData, vehicleNumber: e.target.value })} className="glass" style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} required />
+            </div>
           )}
-          <input placeholder="Brand (e.g. Toyota)" value={formData.brand} onChange={e => setFormData({ ...formData, brand: e.target.value })} className="glass" style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} required />
-          <input placeholder="Model (e.g. Camry)" value={formData.model} onChange={e => setFormData({ ...formData, model: e.target.value })} className="glass" style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} required />
-          <input type="number" placeholder="Current Mileage" value={formData.mileage} onChange={e => setFormData({ ...formData, mileage: parseInt(e.target.value) || 0 })} className="glass" style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Brand *</label>
+            <input placeholder="e.g. Toyota" value={formData.brand} onChange={e => setFormData({ ...formData, brand: e.target.value })} className="glass" style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} required />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Model *</label>
+            <input placeholder="e.g. Camry" value={formData.model} onChange={e => setFormData({ ...formData, model: e.target.value })} className="glass" style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} required />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Current Mileage (km)</label>
+            <input type="number" placeholder="e.g. 50000" value={formData.mileage} onChange={e => setFormData({ ...formData, mileage: parseInt(e.target.value) || 0 })} className="glass" style={{ padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', color: 'white' }} />
+          </div>
           <button type="submit" style={{ padding: '12px', background: 'var(--accent-gradient)', borderRadius: '8px', color: 'white', fontWeight: 'bold', marginTop: '1rem' }}>{editingId ? 'Save Changes' : 'Register Vehicle'}</button>
         </form>
       </Modal>
