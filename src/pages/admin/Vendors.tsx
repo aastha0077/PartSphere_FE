@@ -274,7 +274,7 @@ const Vendors = () => {
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Contact Person</label>
-              <input value={formData.contactPerson} onChange={e => setFormData({...formData, contactPerson: e.target.value})} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-indigo-500" required />
+              <input value={formData.contactPerson} onChange={e => setFormData({...formData, contactPerson: e.target.value})} placeholder="e.g. Ram Bahadur" className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-indigo-500" required />
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Role / Title</label>

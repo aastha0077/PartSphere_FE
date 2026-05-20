@@ -15,10 +15,18 @@ const parseUTCDate = (dateStr: string | undefined | null): Date => {
   return new Date(hasTimezone ? dateStr : dateStr + 'Z');
 };
 
+const TabLoader = () => (
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '5rem 2rem' }}>
+    <div className="animate-spin" style={{ width: '40px', height: '40px', border: '3px solid rgba(99, 102, 241, 0.1)', borderTop: '3px solid var(--accent-primary)', borderRadius: '50%' }} />
+    <p style={{ marginTop: '1.5rem', color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: '500' }}>Fetching latest records...</p>
+  </div>
+);
+
 const CustomerPortal = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [parts, setParts] = useState<VehiclePart[]>([]);
+  const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState<any[]>([]);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'catalog' | 'history' | 'appointments' | 'requests' | 'reviews' | 'credits'>('catalog');
@@ -101,6 +109,7 @@ const CustomerPortal = () => {
   }, [isCartOpen]);
 
   const fetchPortalData = async () => {
+    setLoading(true);
     try {
       const [partsRes, historyRes, requestsRes, appointmentsRes, vehiclesRes, creditsRes] = await Promise.allSettled([
         api.get('/customer/parts'),
@@ -129,6 +138,8 @@ const CustomerPortal = () => {
     } catch (err: unknown) {
       console.error('Failed to fetch portal data', err);
       // toast.error('Some data could not be loaded');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -139,6 +150,10 @@ const CustomerPortal = () => {
       window.history.replaceState({}, document.title);
     }
   }, [location]);
+
+  const cartSubtotal = cart.reduce((sum, item) => sum + item.price, 0);
+  const cartDiscount = cartSubtotal > 5000 ? cartSubtotal * 0.1 : 0;
+  const cartTotal = cartSubtotal - cartDiscount;
 
   const handlePayCreditInit = (credit: any) => {
     setActiveCreditPayment(credit);
@@ -414,7 +429,11 @@ const CustomerPortal = () => {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '2rem' }}>
-                  {filteredParts.length === 0 ? (
+                  {loading ? (
+                    <div style={{ gridColumn: '1/-1' }}>
+                      <TabLoader />
+                    </div>
+                  ) : filteredParts.length === 0 ? (
                     <div style={{ gridColumn: '1/-1', padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>
                       <Package size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
                       <p>No parts found in the catalog.</p>
@@ -478,7 +497,16 @@ const CustomerPortal = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {(() => {
+                    {loading ? (
+                      <tr>
+                        <td colSpan={5} style={{ padding: '3rem', textAlign: 'center' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                            <div className="animate-spin" style={{ width: '30px', height: '30px', border: '3px solid rgba(99, 102, 241, 0.1)', borderTop: '3px solid var(--accent-primary)', borderRadius: '50%' }} />
+                            <p style={{ marginTop: '1rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Loading order history...</p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (() => {
                       const rows = [...((history as any)?.purchases || [])].sort(
                         (a: any, b: any) =>
                           new Date(b.date).getTime() - new Date(a.date).getTime() || (b.id ?? 0) - (a.id ?? 0)
@@ -517,7 +545,11 @@ const CustomerPortal = () => {
 
             {activeTab === 'appointments' && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
-                {appointments.length === 0 ? (
+                {loading ? (
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <TabLoader />
+                  </div>
+                ) : appointments.length === 0 ? (
                   <div className="glass-card" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '5rem' }}>
                     <Calendar size={48} style={{ margin: '0 auto 1.5rem', opacity: 0.1 }} />
                     <p style={{ color: 'var(--text-muted)' }}>No scheduled appointments found.</p>
@@ -601,7 +633,16 @@ const CustomerPortal = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {requests.length === 0 ? (
+                      {loading ? (
+                        <tr>
+                          <td colSpan={5} style={{ padding: '3rem', textAlign: 'center' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                              <div className="animate-spin" style={{ width: '30px', height: '30px', border: '3px solid rgba(99, 102, 241, 0.1)', borderTop: '3px solid var(--accent-primary)', borderRadius: '50%' }} />
+                              <p style={{ marginTop: '1rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Loading requests...</p>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : requests.length === 0 ? (
                         <tr>
                           <td colSpan={5} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                             No custom part requests submitted yet. Click "Request a Part" to start.
@@ -649,7 +690,9 @@ const CustomerPortal = () => {
                   <h2 className="text-2xl font-bold">Pending Dues & Credits</h2>
                 </div>
 
-                {credits.length === 0 ? (
+                {loading ? (
+                  <TabLoader />
+                ) : credits.length === 0 ? (
                   <div className="glass-card" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
                     <CheckCircle size={48} className="text-emerald-500" style={{ margin: '0 auto 1rem', opacity: 0.8 }} />
                     <h3 className="text-xl font-bold mb-2">All Clear!</h3>
@@ -912,9 +955,23 @@ const CustomerPortal = () => {
                   </div>
                   <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '1.5rem', marginTop: 'auto' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                      <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>Total</span>
+                      <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>Subtotal</span>
+                      <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>
+                        Rs. {cartSubtotal.toLocaleString()}
+                      </span>
+                    </div>
+                    {cartDiscount > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', color: 'var(--success)' }}>
+                        <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>Loyalty Discount (10%)</span>
+                        <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>
+                          - Rs. {cartDiscount.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', borderTop: '1px solid var(--glass-border)', paddingTop: '1rem' }}>
+                      <span style={{ fontSize: '1.25rem', fontWeight: '900' }}>Total</span>
                       <span style={{ fontSize: '1.25rem', fontWeight: '900', color: 'var(--accent-primary)' }}>
-                        Rs. {cart.reduce((sum, item) => sum + item.price, 0).toLocaleString()}
+                        Rs. {cartTotal.toLocaleString()}
                       </span>
                     </div>
                     <button onClick={handleCheckout} className="glass" style={{ width: '100%', padding: '14px', background: 'var(--accent-gradient)', color: 'white', fontWeight: '800', borderRadius: '12px' }}>
@@ -991,7 +1048,7 @@ const CustomerPortal = () => {
               <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                 <button onClick={() => setCheckoutStep('delivery')} className="glass" style={{ flex: 1, padding: '12px', borderRadius: '10px', color: 'var(--text-secondary)' }}>Back</button>
                 <button onClick={handleCheckout} className="glass" style={{ flex: 2, padding: '12px', background: 'var(--accent-gradient)', color: 'white', fontWeight: '700', borderRadius: '10px' }}>
-                  {checkoutInfo.paymentMethod === 'Credit/Debit Card' ? 'Next: Card Details' : `Confirm Rs. ${cart.reduce((sum, item) => sum + item.price, 0).toLocaleString()}`}
+                  {checkoutInfo.paymentMethod === 'Credit/Debit Card' ? 'Next: Card Details' : `Confirm Rs. ${cartTotal.toLocaleString()}`}
                 </button>
               </div>
             </div>
@@ -1049,7 +1106,7 @@ const CustomerPortal = () => {
 
               <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                 <button onClick={() => setCheckoutStep('payment')} className="glass" style={{ flex: 1, padding: '12px', borderRadius: '10px', color: 'var(--text-secondary)' }}>Back</button>
-                <button onClick={handleCheckout} className="glass" style={{ flex: 2, padding: '12px', background: 'var(--accent-gradient)', color: 'white', fontWeight: '700', borderRadius: '10px' }}>Pay Rs. {cart.reduce((sum, item) => sum + item.price, 0).toLocaleString()}</button>
+                <button onClick={handleCheckout} className="glass" style={{ flex: 2, padding: '12px', background: 'var(--accent-gradient)', color: 'white', fontWeight: '700', borderRadius: '10px' }}>Pay Rs. {cartTotal.toLocaleString()}</button>
               </div>
             </div>
           )}
@@ -1117,7 +1174,7 @@ const CustomerPortal = () => {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
-                <input placeholder="Cardholder Name" value={creditCardInfo.name} onChange={e => setCreditCardInfo({ ...creditCardInfo, name: e.target.value })} className="glass" style={{ width: '100%', padding: '12px', borderRadius: '10px', color: 'white' }} />
+                <input placeholder="e.g. Ram Bahadur" value={creditCardInfo.name} onChange={e => setCreditCardInfo({ ...creditCardInfo, name: e.target.value })} className="glass" style={{ width: '100%', padding: '12px', borderRadius: '10px', color: 'white' }} />
                 <input placeholder="Card Number" value={creditCardInfo.number} onChange={e => setCreditCardInfo({ ...creditCardInfo, number: e.target.value })} className="glass" style={{ width: '100%', padding: '12px', borderRadius: '10px', color: 'white' }} />
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <input placeholder="MM/YY" value={creditCardInfo.expiry} onChange={e => setCreditCardInfo({ ...creditCardInfo, expiry: e.target.value })} className="glass" style={{ width: '100%', padding: '12px', borderRadius: '10px', color: 'white' }} />

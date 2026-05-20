@@ -11,7 +11,7 @@ const PartRequests = () => {
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
-  const [updateData, setUpdateData] = useState({ status: '', notes: '' });
+  const [updateData, setUpdateData] = useState({ status: '', staffNotes: '' });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -82,7 +82,12 @@ const PartRequests = () => {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Loading requests...</td></tr>
+              <tr><td colSpan={5} style={{ padding: '3rem', textAlign: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <div className="animate-spin" style={{ width: '30px', height: '30px', border: '3px solid rgba(99, 102, 241, 0.1)', borderTop: '3px solid var(--accent-primary)', borderRadius: '50%' }} />
+                  <p style={{ marginTop: '1rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Loading requests...</p>
+                </div>
+              </td></tr>
             ) : requests.length === 0 ? (
               <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>No pending requests.</td></tr>
             ) : pagedRequests.map(req => (
@@ -114,7 +119,7 @@ const PartRequests = () => {
                 </td>
                 <td style={{ padding: '6px 12px', textAlign: 'right' }}>
                   <button
-                    onClick={() => { setSelectedRequest(req); setUpdateData({ status: req.status, notes: req.staffNotes || '' }); }}
+                    onClick={() => { setSelectedRequest(req); setUpdateData({ status: req.status, staffNotes: req.staffNotes || '' }); }}
                     className="glass"
                     style={{ padding: '4px 8px', fontSize: '0.75rem', color: 'white', borderRadius: '6px', fontWeight: '600' }}
                   >
@@ -163,8 +168,8 @@ const PartRequests = () => {
               <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Staff Notes (Internal/Customer Viewable)</label>
               <textarea
                 placeholder="Updates for the customer..."
-                value={updateData.notes}
-                onChange={e => setUpdateData({ ...updateData, notes: e.target.value })}
+                value={updateData.staffNotes}
+                onChange={e => setUpdateData({ ...updateData, staffNotes: e.target.value })}
                 style={{ width: '100%', padding: '12px', background: 'var(--bg-tertiary)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white', minHeight: '100px' }}
               />
             </div>

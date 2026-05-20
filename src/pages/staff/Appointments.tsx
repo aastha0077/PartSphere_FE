@@ -133,7 +133,10 @@ const Appointments = () => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {loading ? (
-                <p style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>Loading records...</p>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem' }}>
+                  <div className="animate-spin" style={{ width: '36px', height: '36px', border: '3px solid rgba(99, 102, 241, 0.1)', borderTop: '3px solid var(--accent-primary)', borderRadius: '50%' }} />
+                  <p style={{ marginTop: '1.25rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Loading schedule...</p>
+                </div>
               ) : dayAppointments.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '5rem 2rem', background: 'rgba(255,255,255,0.01)', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.05)' }}>
                   <CalendarIcon size={48} style={{ margin: '0 auto 1.5rem', opacity: 0.1 }} />
@@ -237,7 +240,12 @@ const Appointments = () => {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={8} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Loading records...</td></tr>
+                <tr><td colSpan={8} style={{ padding: '3rem', textAlign: 'center' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div className="animate-spin" style={{ width: '30px', height: '30px', border: '3px solid rgba(99, 102, 241, 0.1)', borderTop: '3px solid var(--accent-primary)', borderRadius: '50%' }} />
+                    <p style={{ marginTop: '1rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Loading records...</p>
+                  </div>
+                </td></tr>
               ) : sortedAllAppointments.length === 0 ? (
                 <tr><td colSpan={8} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>No appointments scheduled.</td></tr>
               ) : pagedAppointments.map(app => (

@@ -84,7 +84,10 @@ const Credits = () => {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
         {loading ? (
-          <p className="text-gray-500 col-span-full">Loading credits...</p>
+          <div className="col-span-full" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem' }}>
+            <div className="animate-spin" style={{ width: '36px', height: '36px', border: '3px solid rgba(99, 102, 241, 0.1)', borderTop: '3px solid var(--accent-primary)', borderRadius: '50%' }} />
+            <p style={{ marginTop: '1.25rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Loading credits...</p>
+          </div>
         ) : sortedCredits.length === 0 ? (
           <p className="text-gray-500 col-span-full text-center py-12">No outstanding credits in the ledger.</p>
         ) : (

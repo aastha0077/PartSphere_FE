@@ -38,7 +38,10 @@ const CustomerHistory = () => {
 
       <div className="space-y-6">
         {loading ? (
-          <p className="text-gray-500">Loading your history...</p>
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-indigo-500"></div>
+            <p className="text-gray-500 mt-4">Loading your history...</p>
+          </div>
         ) : history.length === 0 ? (
           <div className="p-12 text-center text-gray-500 bg-[#0d0d12] border border-white/5 rounded-2xl">
             <ShoppingBag size={48} className="mx-auto mb-4 text-white/10" />
